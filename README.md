@@ -61,8 +61,7 @@ The project combines:
 - a **manager heating control panel**
 - an **admin dashboard and admin login flow**
 - **thermal printer slip generation** with QR code output
-- a **MIFARE card reader writer** workflow integrated into reception operations
-- **MIFARE card reader writer** hardware based on **STM32F103 + USB HID**
+- **MIFARE card reader writer** hardware based on **STM32F103 + USB HID** integrated into reception operations
 - **per-room Raspberry Pi 3A+ nodes** for in-room automation
 - **HA Bridge and Alexa voice control** for each room
 - a **central Raspberry Pi 3B server** coordinating room-facing and operational services
