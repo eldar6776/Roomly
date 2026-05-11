@@ -2,28 +2,48 @@
 
 ![Platform](https://img.shields.io/badge/platform-Windows%2011-0078D6?style=for-the-badge&logo=windows&logoColor=white)
 ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%203B-C51A4A?style=for-the-badge&logo=raspberrypi&logoColor=white)
+![Node](https://img.shields.io/badge/room%20node-Raspberry%20Pi%203A%2B-A22846?style=for-the-badge&logo=raspberrypi&logoColor=white)
 ![Desktop](https://img.shields.io/badge/app-Electron%20Desktop-47848F?style=for-the-badge&logo=electron&logoColor=white)
 ![Frontend](https://img.shields.io/badge/frontend-React%20%2B%20TypeScript-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![Backend](https://img.shields.io/badge/backend-Python%20%2B%20Flask-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Voice](https://img.shields.io/badge/voice-Alexa%20Integrated-232F3E?style=for-the-badge&logo=amazonalexa&logoColor=white)
+![Bridge](https://img.shields.io/badge/room%20bridge-HA%20Bridge-0F766E?style=for-the-badge)
 ![System](https://img.shields.io/badge/system-Smart%20Reception-111827?style=for-the-badge)
 ![System](https://img.shields.io/badge/system-Smart%20Room%20Control-0F766E?style=for-the-badge)
 ![Version](https://img.shields.io/badge/version-1.0.0-orange?style=for-the-badge)
 ![Status](https://img.shields.io/badge/status-Active%20Development-16A34A?style=for-the-badge)
 
-**Roomly** is a smart hospitality control platform centered around a reception desktop application and a Raspberry Pi backend that drive room access, room control, guest-facing interfaces, and operational management.
+**Roomly** is a smart hospitality control platform centered around a Windows reception desktop application, a central Raspberry Pi 3B backend, and per-room Raspberry Pi 3A+ nodes that extend room automation with HA Bridge and Alexa voice control.
 
-This repository contains the actual working software layers used for:
+This repository contains the working software layers used for:
 
 - reception workstation operations on Windows 11
 - local backend development on Windows
 - production backend runtime on Raspberry Pi 3B
-- room control pages for guests
-- manager and admin web interfaces
-- printer-based guest slip generation
+- guest room control pages
+- manager and admin operational interfaces
+- thermal printer guest-slip generation
 - card reader / card writer integration
-- communication with external smart-device infrastructure
+- room-level voice control architecture through HA Bridge and Alexa
+- communication with smart-device infrastructure across the property
 
-The code in this repository shows a real multi-part system rather than a demo project.
+The code in this repository reflects a real multi-part hospitality system rather than a standalone demo project.
+
+---
+
+## Screenshots
+
+### Reception Desktop Application
+![Reception Login](docs/images/reception-app-login.png)
+![Reception Dashboard](docs/images/reception-app-dashboard.png)
+![Reception Room View](docs/images/reception-app-room.png)
+
+### Guest Room Control
+![Room Control](docs/images/room-control.png)
+
+### Operations and Management
+![Manager Dashboard](docs/images/manager-dashboard.png)
+![Admin Dashboard](docs/images/admin-dashboard.png)
 
 ---
 
@@ -40,9 +60,67 @@ The project combines:
 - an **admin dashboard and admin login flow**
 - **thermal printer slip generation** with QR code output
 - **MIFARE/card-reader related setup and Windows integration**
-- configuration for **Raspberry Pi-hosted smart room access**
+- **per-room Raspberry Pi 3A+ nodes** for in-room automation
+- **HA Bridge and Alexa voice control** for each room
+- a **central Raspberry Pi 3B server** coordinating room-facing and operational services
 
 The repository structure and code clearly indicate that the system is designed for real on-site use, not just local UI prototyping.
+
+---
+
+## Voice Control and Per-Room Raspberry Pi Architecture
+
+One of the most important characteristics of this system is that **Alexa is integrated into the rooms**.
+
+The room-control architecture is split into two Raspberry Pi layers:
+
+- a **central Raspberry Pi 3B** running the main Roomly backend
+- a **Raspberry Pi 3A+ in each room**
+
+Each room-level Raspberry Pi 3A+ runs **HA Bridge** and is linked to the central Raspberry Pi 3B Roomly server. This architecture allows every room to support both:
+
+- **web-based room control** through the Roomly guest interface
+- **voice-based room control** through Alexa commands
+
+In practice, that means the same room can be controlled through:
+
+- the guest web UI served by Roomly
+- the reception and operational system
+- in-room Alexa voice commands
+
+This is a key part of the project because it turns the room-control layer into a hybrid platform that combines web control, backend orchestration, and voice interaction.
+
+### Voice-control architecture overview
+
+```text
++-----------------------------+
+| Central Raspberry Pi 3B     |
+| Roomly backend server       |
++-------------+---------------+
+              |
+              +-----------------------------------+
+              |                                   |
+              v                                   v
++-----------------------------+      +-----------------------------+
+| Room Raspberry Pi 3A+       |      | Room Raspberry Pi 3A+       |
+| HA Bridge + Alexa           |      | HA Bridge + Alexa           |
++-------------+---------------+      +-------------+---------------+
+              |                                      |
+              v                                      v
++-----------------------------+      +-----------------------------+
+| Room devices                |      | Room devices                |
+| lights / thermostat / door  |      | lights / thermostat / door  |
++-----------------------------+      +-----------------------------+
+```
+
+### Why this matters
+
+This architecture makes Roomly more than a reception-management tool. It becomes a connected property-control system in which:
+
+- the reception application manages operational workflows
+- the Raspberry Pi 3B backend serves room and management interfaces
+- every room gets its own Raspberry Pi 3A+ voice-control node
+- Alexa becomes part of the guest room experience
 
 ---
 
@@ -50,9 +128,10 @@ The repository structure and code clearly indicate that the system is designed f
 
 ```text
 Roomly/
-├── reception-app/   # Windows 11 desktop reception application
-├── server-rpi/      # Production backend for Raspberry Pi 3B
-├── server-win/      # Windows localhost backend used for development/testing
+├── docs/images/      # README screenshots and visual assets
+├── reception-app/    # Windows 11 desktop reception application
+├── server-rpi/       # Production backend for Raspberry Pi 3B
+├── server-win/       # Windows localhost backend used for development/testing
 └── README.md
 ```
 
@@ -168,7 +247,7 @@ Based strictly on the files present in this repository, `server-rpi` is responsi
 - handling manager heating control
 - communicating with device-control layers
 - producing current device and thermostat state for the frontend
-- running on Raspberry Pi as the production host
+- acting as the central Raspberry Pi 3B server in the property architecture
 
 ### Templates currently present
 
@@ -354,15 +433,19 @@ Separate login pages exist for:
 
 This indicates the system already has distinct operational roles on the web/backend side in addition to the desktop app roles.
 
+### 7. Room-level Alexa integration
+
+Beyond the web UI itself, the system architecture includes per-room Raspberry Pi 3A+ nodes running HA Bridge and connected to the central Raspberry Pi 3B backend. This gives each room a voice-control layer in addition to the Roomly web-based guest interface.
+
 ---
 
 ## Architecture
 
-The repository shows three practical software layers:
+The repository shows three main software and infrastructure layers:
 
 1. **Reception workstation layer** on Windows 11
-2. **Backend service layer** for local testing and Raspberry Pi production runtime
-3. **Guest / manager / admin web interfaces** served by the backend
+2. **Central backend layer** on Raspberry Pi 3B
+3. **Per-room automation nodes** on Raspberry Pi 3A+ with HA Bridge and Alexa
 
 ### Core structure
 
@@ -382,8 +465,9 @@ The repository shows three practical software layers:
               | backend communication
               v
 +-----------------------------+
+| Central Raspberry Pi 3B     |
 | Roomly backend              |
-| server-win or server-rpi    |
+| server-win / server-rpi     |
 +-------------+---------------+
               |
               +------------------------------+
@@ -393,25 +477,31 @@ The repository shows three practical software layers:
 | Guest room web UI           |   | Manager / Admin web UI      |
 | soba.html                   |   | manager/admin pages         |
 +-----------------------------+   +-----------------------------+
+              |
+              v
++-----------------------------+
+| Per-room Raspberry Pi 3A+   |
+| HA Bridge + Alexa           |
++-----------------------------+
 ```
 
 ### Operational environment view
 
 ```text
 +----------------------+        +----------------------+        +----------------------+
-| Reception PC         | -----> | Roomly Backend       | -----> | Device / control     |
-| Windows 11 app       |        | Flask on Win / RPi   |        | infrastructure       |
-+----------+-----------+        +----------+-----------+        +----------------------+
-           |                               |
-           |                               |
-           v                               v
-+----------------------+        +----------------------+
-| Thermal printer      |        | Guest / Manager /    |
-| Card reader/writer   |        | Admin web interfaces |
+| Reception PC         | -----> | Central RPi 3B       | -----> | Room RPi 3A+ nodes   |
+| Windows 11 app       |        | Roomly backend       |        | HA Bridge + Alexa    |
++----------+-----------+        +----------+-----------+        +----------+-----------+
+           |                               |                               |
+           |                               |                               v
+           v                               v                    +----------------------+
++----------------------+        +----------------------+        | Room devices         |
+| Thermal printer      |        | Guest / Manager /    |        | lights / HVAC / door |
+| Card reader/writer   |        | Admin web interfaces |        +----------------------+
 +----------------------+        +----------------------+
 ```
 
-### Guest access flow visible in the code
+### Guest access flow visible in the code and architecture
 
 The printed slip generated by `printer.py` contains:
 
@@ -426,11 +516,12 @@ That establishes a concrete operational flow:
 Reception creates / prints guest slip
         -> guest receives room number + PIN
         -> guest scans QR code
-        -> guest opens room control page served by Raspberry Pi backend
+        -> guest opens room control page served by the central Raspberry Pi 3B backend
         -> guest controls room temperature, lights, and door-related actions
+        -> room devices are also exposed to in-room Alexa voice commands through the room Raspberry Pi 3A+ HA Bridge node
 ```
 
-This is one of the most important real-world flows visible in the repository.
+This is one of the most important real-world flows visible in the repository and in the deployed architecture.
 
 ---
 
@@ -445,7 +536,7 @@ Develop locally in server-win
     -> test on localhost
     -> validate templates, APIs, and control logic
     -> copy / deploy to server-rpi
-    -> run in production on Raspberry Pi 3B
+    -> run in production on the central Raspberry Pi 3B
 ```
 
 ### Desktop workflow
@@ -466,7 +557,8 @@ Reception operator uses desktop app
     -> system prepares guest access data
     -> thermal printer prints access slip with QR code
     -> guest opens room-control page
-    -> backend serves live room control and operational interfaces
+    -> central backend serves live room control and operational interfaces
+    -> room Raspberry Pi 3A+ node provides HA Bridge and Alexa voice control inside the room
 ```
 
 ---
@@ -497,6 +589,13 @@ Reception operator uses desktop app
 - card reader / card writer setup with Python dependencies
 - batch and PowerShell automation scripts
 
+### Property-control infrastructure
+
+- central Raspberry Pi 3B backend
+- per-room Raspberry Pi 3A+ nodes
+- HA Bridge
+- Alexa voice control
+
 ---
 
 ## Why the repository is structured this way
@@ -505,15 +604,16 @@ This repository has a very practical layout because it reflects how the software
 
 - `reception-app` is the operator-facing application used on a Windows reception PC
 - `server-win` is the development and localhost testing backend
-- `server-rpi` is the production backend intended for Raspberry Pi deployment
+- `server-rpi` is the production backend intended for the central Raspberry Pi 3B deployment
 
-This separation is not generic architecture styling — it matches the real workflow already visible in the code:
+This separation is not generic architecture styling — it matches the real workflow already visible in the code and in the described room setup:
 
 - Windows workstation setup scripts
 - production Raspberry Pi configuration
 - locally testable backend templates
 - printer and card-related local integrations
 - guest room control served from the backend
+- room-level Alexa control provided by Raspberry Pi 3A+ nodes with HA Bridge
 
 ---
 
@@ -536,12 +636,14 @@ That branding appears in the desktop app metadata, UI text, configuration defaul
 Roomly is a real hospitality-control software stack that already combines:
 
 - a Windows reception desktop application
-- Raspberry Pi backend deployment
+- a central Raspberry Pi 3B backend
+- per-room Raspberry Pi 3A+ nodes
 - guest room control pages
 - manager heating control
 - admin and manager authentication
 - thermal printer guest-slip generation
 - card reader / card-writer support
 - multilingual guest-facing interaction
+- Alexa voice control through HA Bridge room nodes
 
-This repository does not just describe the platform — it already contains the active software layers that make the reception and room-control workflow possible.
+This repository does not just describe the platform — it already contains the active software layers that make the reception, room-control, and voice-control workflow possible.
