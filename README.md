@@ -13,23 +13,11 @@
 ![Version](https://img.shields.io/badge/version-1.0.0-orange?style=for-the-badge)
 ![Status](https://img.shields.io/badge/status-Active%20Development-16A34A?style=for-the-badge)
 
-**Roomly** is a smart hospitality control platform built around a **central Raspberry Pi 3B Python server** that coordinates reception operations, guest room access, smart room control, voice control, management interfaces, and room-device routing across the property.
+**Roomly** is a smart hospitality control platform built around a **central Raspberry Pi 3B Python server** that coordinates reception operations, room access, smart room control, voice control, and room-device routing across a real, field-deployed hardware/software ecosystem.
 
-The central server connects and orchestrates:
+At the center of the system is one Python-based control host that connects the **Windows 11 Electron reception application**, the **guest smart room web application**, **8 room-control paths**, **per-room Raspberry Pi 3A+ nodes with HA Bridge and Alexa**, **HTTPBridge routing devices**, **3 STM32F746 Smart Room displays per room**, a **MIFARE card reader writer** based on **STM32F103 + USB HID**, a **fitness heating controller and thermostat**, and an **Android-assisted after-hours reservation workflow**.
 
-- the **Windows 11 Electron reception application**
-- **8 guest rooms** with smart-room control
-- a **Raspberry Pi 3A+ in every room**
-- **Alexa + HA Bridge** voice control inside every room
-- **8 HTTPBridge room-control devices**
-- **3 STM32F746 Smart Room displays per room** connected through the HTTPBridge layer
-- a **MIFARE card reader writer** with STM32F103 + USB HID integration
-- **1 heating controller**
-- **1 thermostat for the fitness room**
-- the guest **smart room web application** hosted from the central server
-- a **mobile Android reservation workflow** used outside regular reception hours
-
-The code in this repository reflects a real multi-part hospitality-control system rather than a standalone demo project.
+This repository reflects a fully operational on-site system rather than a standalone demo project.
 
 ---
 
@@ -38,67 +26,49 @@ The code in this repository reflects a real multi-part hospitality-control syste
 ### Reception Desktop Application
 ![Reception Login](docs/images/reception-app-login.png)
 ![Reception Dashboard](docs/images/reception-app-dashboard.png)
-![Reception Room View](docs/images/reception-app-room.png)
 
-### Guest Room Control
-![Room Control](docs/images/room-control.png)
+<table>
+  <tr>
+    <td align="center" width="50%"><img src="docs/images/reception-app-room.png" alt="Reception Room View" width="100%"></td>
+    <td align="center" width="50%"><img src="docs/images/room-control.png" alt="Room Control" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Reception Room View</sub></td>
+    <td align="center"><sub>Guest Room Control</sub></td>
+  </tr>
+</table>
 
 ### Operations and Management
-![Manager Dashboard](docs/images/manager-dashboard.png)
-![Admin Dashboard](docs/images/admin-dashboard.png)
+<table>
+  <tr>
+    <td align="center" width="50%"><img src="docs/images/manager-dashboard.png" alt="Manager Dashboard" width="100%"></td>
+    <td align="center" width="50%"><img src="docs/images/admin-dashboard.png" alt="Admin Dashboard" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Manager Dashboard</sub></td>
+    <td align="center"><sub>Admin Dashboard</sub></td>
+  </tr>
+</table>
 
 ---
 
-## What Roomly does
+## Overview
 
-From the code currently in this repository and from the described production architecture, Roomly provides a practical software stack for a hospitality environment branded in the project as **My Smart Hotel / My Reception / My Village Resort**.
+Roomly provides a practical software and hardware stack for a hospitality environment branded in the project as **My Smart Hotel / Toplik Smart Hotel / Toplik Reception / Toplik Village Resort**.
 
-The project combines:
+The platform combines a **desktop reception application** built with Electron, React, and TypeScript, a **central Python backend** built with Flask and Waitress, a **guest smart room web application** hosted by the central server, **per-room Raspberry Pi 3A+ nodes** for in-room automation, **HA Bridge and Alexa voice control** in every room, **HTTPBridge-based room-device routing**, **STM32F746 Smart Room displays** in the room-control layer, a **MIFARE card reader writer** device based on **STM32F103 + USB HID**, a **manager heating control panel** with a fitness thermostat/heating branch, and a **mobile reservation workflow** for after-hours guest access.
 
-- a **desktop reception application** built with Electron, React, and TypeScript
-- a **central Python backend** built with Flask and Waitress
-- a **guest room control interface** with multilingual UI
-- a **manager heating control panel**
-- an **admin dashboard and admin login flow**
-- **thermal printer slip generation** with QR code output
-- **MIFARE card reader writer** hardware based on **STM32F103 + USB HID** integrated into reception operations
-- **per-room Raspberry Pi 3A+ nodes** for in-room automation
-- **HA Bridge and Alexa voice control** for each room
-- a **central Raspberry Pi 3B server** coordinating room-facing and operational services
-- **HTTPBridge-based room-device routing**
-- **STM32F746 Smart Room displays** attached to the room-control layer
-- a **mobile reservation workflow** for after-hours guest check-in
-
-The result is a hybrid property-control platform where desktop software, backend logic, web interfaces, room devices, voice control, and custom hardware work together under one central server.
+Together, these parts form a centralized property-control system where desktop software, backend logic, guest interfaces, access logic, room hardware, and voice commands are all coordinated from one server.
 
 ---
 
 ## Hardware and Software Ecosystem
 
-Roomly should not be viewed as a standalone app. It is the central software layer of a wider operational ecosystem built from connected software and hardware components.
+Roomly is the central software layer of a wider operational ecosystem built from connected custom software and hardware components.
 
-This ecosystem includes:
+That ecosystem includes the reception application, the central Raspberry Pi 3B backend, the guest smart room app, the per-room Raspberry Pi 3A+ Alexa nodes, HTTPBridge devices, STM32F746 Smart Room displays, the **MIFARE card reader writer** hardware based on **STM32F103 + USB HID**, heating and thermostat control infrastructure, and an Android reservation workflow for out-of-hours use.
 
-- the **Roomly Electron reception application**
-- the **central Raspberry Pi 3B Python backend**
-- the **guest smart room web application**
-- **per-room Raspberry Pi 3A+ nodes**
-- **Alexa + HA Bridge** integration in every room
-- **HTTPBridge** room-control routing devices
-- **3 STM32F746 Smart Room displays per room**
-- a **MIFARE card reader writer** device based on **STM32F103 + USB HID**
-- heating and thermostat control infrastructure
-- an **Android reservation workflow** for out-of-hours operation
-
-This is important because the project is meant to present a **fully operational field-deployed hardware/software ecosystem**, not a demo stack.
-
-As the related repositories are finalized, this README can evolve into a connected entry point where items such as:
-
-- **MIFARE card reader writer**
-- **HTTPBridge**
-- **STM32F746 Smart Room displays**
-
-will appear as linked ecosystem components that open their dedicated repositories.
+The goal of this repository is to present a **fully operational, field-deployed ecosystem**, not a prototype or demo stack. As the related repositories are finalized, components such as **MIFARE card reader writer**, **HTTPBridge**, and **STM32F746 Smart Room displays** can be represented here as linked ecosystem entries pointing to their dedicated repositories.
 
 ---
 
@@ -263,7 +233,7 @@ Based on the code and configuration, the desktop app is intended for:
 - hotel configuration and local settings
 - communication with the central Raspberry Pi 3B backend
 - local printer integration
-- local card-reader / card-writer support
+- local MIFARE card reader writer support
 - Windows-based front desk operation
 - room issuance workflows
 
@@ -283,7 +253,7 @@ reception-app/
 ├── src/main/        # Electron/main-process logic and config
 ├── src/renderer/    # React frontend
 ├── src/shared/      # shared code
-├── cardrw/          # card reader / writer support
+├── cardrw/          # MIFARE card reader writer support
 ├── printer.py       # thermal printer integration
 └── SETUP_NEW_PC.ps1 # full new-PC setup
 ```
@@ -635,9 +605,9 @@ The repository and the described deployment show five main layers:
            v                               v                    +----------------------+
 +----------------------+        +----------------------+        | AWS Alexa intents    |
 | Thermal printer      |        | Guest / Manager /    |        +----------------------+
-| MIFARE card reader   |        | Admin web interfaces |
-| Card writer          |        +----------+-----------+
-+----------------------+                   |
+| MIFARE card writer   |        | Admin web interfaces |
++----------------------+        +----------+-----------+
+                                           |
                                            v
                                 +----------------------+
                                 | HTTPBridge layer     |
@@ -715,7 +685,7 @@ Develop locally in server-win
 Prepare Windows workstation
     -> run SETUP_NEW_PC.ps1
     -> install Node.js / Python / Build Tools
-    -> install card reader dependencies
+    -> install MIFARE card reader writer dependencies
     -> build/package reception desktop app
     -> run on reception PC
 ```
@@ -726,7 +696,7 @@ Prepare Windows workstation
 Reception operator uses desktop app
     -> system prepares guest access data
     -> thermal printer prints access slip with QR code
-    -> MIFARE card reader writer supports card workflows
+    -> MIFARE card reader writer supports physical card workflows
     -> guest opens room-control page
     -> central backend serves live room control and operational interfaces
     -> room Raspberry Pi 3A+ node provides HA Bridge and Alexa voice control inside the room
@@ -758,7 +728,7 @@ Reception operator uses desktop app
 ### Windows-specific integrations
 
 - Python-based ESC/POS thermal printing through `win32print`
-- card reader / card writer setup with Python dependencies
+- MIFARE card reader writer setup with Python dependencies
 - batch and PowerShell automation scripts
 
 ### Property-control infrastructure
@@ -824,7 +794,6 @@ Roomly is a real hospitality-control software stack that already combines:
 - admin and manager authentication
 - thermal printer guest-slip generation
 - MIFARE card reader writer integration
-- card reader / card-writer support
 - multilingual guest-facing interaction
 - HTTPBridge-based device routing
 - 3 STM32F746 Smart Room displays per room
