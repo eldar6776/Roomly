@@ -1,0 +1,76 @@
+﻿# ==============================================================================
+# Workspace gitignore for Roomly Projects
+# ==============================================================================
+
+# Applications
+reception-app/
+server-rpi/
+server-win/
+
+# Backups and copies
+archive/
+**/archive/
+*- Copy/
+*.zip
+*.bk
+*.bkp
+config_backup_*.json
+config_bkp.json
+
+# Merged repository representations
+repomix-output.xml
+repomix-output.txt
+repomix-output.json
+
+# Sensitive configuration
+.env
+.env.local
+.env.*.local
+server-rpi/config.json
+server-win/config.json
+*.db
+*.sqlite
+*.sqlite3
+
+# Build outputs and dependencies
+node_modules/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+env/
+dist/
+out/
+build/
+release/
+release*/
+app-builds/
+app-builds*/
+*.tsbuildinfo
+*.pyc
+*.pyo
+*.pyd
+*.exe
+*.msi
+
+# Documentation
+**/doc/
+**/android_transition_docs/
+
+# Logs and temp files
+*.log
+logs/
+.cache/
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# IDE / OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
