@@ -1,0 +1,3352 @@
+<!doctype html>
+<html lang="hr" data-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <title>Toplik Admin Portal 2.0 - Napredna Kontrola Sistema</title>
+    <style>
+        :root {
+            --pico-font-size: 14px;
+            --room-online: #28a745;
+            --room-offline: #dc3545;
+            --room-unknown: #6c757d;
+        }
+        .container-fluid {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 1.5rem;
+            min-height: 95vh;
+        }
+        aside {
+            border-right: 1px solid var(--pico-muted-border-color);
+            padding-right: 1rem;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        aside nav ul { list-style: none; padding-left: 0; }
+        aside nav li a {
+            display: block; padding: 0.5rem; margin-bottom: 0.25rem;
+            border-radius: var(--pico-border-radius); text-decoration: none;
+        }
+        aside nav li a.active {
+            background-color: var(--pico-primary-background);
+            color: var(--pico-primary-inverse);
+        }
+        
+        /* Tabs */
+        .tab-nav {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--pico-muted-border-color);
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .tab-nav button {
+            background: none; border: none; border-bottom: 3px solid transparent;
+            color: var(--pico-muted-color); padding: 0.5rem 1rem; cursor: pointer;
+        }
+        .tab-nav button.active {
+            border-bottom-color: var(--pico-primary);
+            color: var(--pico-primary);
+            font-weight: bold;
+        }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; animation: fade-in 0.2s; }
+
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Status & Controls */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .control-card {
+            border: 1px solid var(--pico-muted-border-color);
+            padding: 1rem;
+            border-radius: var(--pico-border-radius);
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .control-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .control-card h5 { 
+            margin-bottom: 0.5rem; 
+            border-bottom: 2px solid var(--pico-primary); 
+            padding-bottom: 0.25rem;
+            font-weight: 600;
+        }
+        
+        .pin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.5rem; }
+        
+        .log-box {
+            background: #f0f0f0; padding: 0.5rem; font-family: monospace; 
+            max-height: 200px; overflow-y: auto; font-size: 0.85rem; border-radius: 4px;
+        }
+        
+        .status-indicator {
+            display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+            background-color: #ccc; margin-right: 8px;
+            transition: all 0.3s ease;
+        }
+        .status-online { 
+            background-color: var(--room-online); 
+            box-shadow: 0 0 8px var(--room-online);
+            animation: pulse-green 2s infinite;
+        }
+        .status-offline { 
+            background-color: var(--room-offline);
+            box-shadow: 0 0 8px var(--room-offline);
+        }
+        
+        @keyframes pulse-green {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Kolorizacija soba prema statusu */
+        .room-link {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .room-link:hover {
+            transform: translateX(5px);
+        }
+        .room-link.online-room {
+            background-color: rgba(40, 167, 69, 0.15) !important;
+            border-left: 3px solid var(--room-online);
+        }
+        .room-link.offline-room {
+            background-color: rgba(220, 53, 69, 0.15) !important;
+            border-left: 3px solid var(--room-offline);
+        }
+        .room-link.unknown-room {
+            background-color: rgba(108, 117, 125, 0.1) !important;
+            border-left: 3px solid var(--room-unknown);
+        }
+
+        input[type="number"], input[type="text"] { margin-bottom: 0.5rem; }
+        
+        /* Estetske dopune */
+        .info-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            margin: 0.25rem 0;
+            background: var(--pico-muted-border-color);
+        }
+        .info-badge.success { background: rgba(40, 167, 69, 0.2); color: #28a745; }
+        .info-badge.danger { background: rgba(220, 53, 69, 0.2); color: #dc3545; }
+        .info-badge.warning { background: rgba(255, 193, 7, 0.2); color: #d39e00; }
+        
+        /* Sekcije naslovni */
+        h4 i { margin-right: 0.5rem; }
+        h6 { margin-top: 0.5rem; margin-bottom: 0.5rem; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <aside>
+            <div style="text-align: center; padding: 1rem 0; border-bottom: 1px solid var(--pico-muted-border-color);">
+                <h4 style="margin: 0;"><i class="bi bi-building"></i> Toplik Rooms</h4>
+                <small style="color: var(--pico-muted-color);">Room Management</small>
+            </div>
+            <nav>
+                <ul id="room-list">
+                    {% for room_id, soba in sobe.items() %}
+                    <li>
+                        <a href="#" class="room-link"
+                           data-id="{{ room_id }}"
+                           data-name="{{ soba.ime }}"
+                           data-mdns="{{ soba.mdns }}"
+                           data-pin-id="{{ soba.pin_controller_id }}"
+                           data-sec-pin-id="{{ soba.secondary_pin_controller_id }}"
+                           data-th-id="{{ soba.termostat_id }}"
+                           data-scene-id="{{ soba.scene_controller_id }}">
+                           <span class="status-indicator unknown-room"></span>
+                           {{ room_id }} - {{ soba.ime }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </nav>
+        </aside>
+
+        <main style="padding-top: 1rem;">
+            <!-- DASHBOARD UVOD kada nijedna soba nije odabrana -->
+            <div id="welcome-screen">
+                <div style="text-align: center; padding: 3rem 0;">
+                    <h2><i class="bi bi-gear"></i> Dobrodošli u Admin Portal</h2>
+                    <p style="margin: 2rem 0;">Odaberite sobu sa lijeve strane ili upravljajte sistemskom konfiguracijom ispod.</p>
+                </div>
+
+                <!-- CONFIG EDITOR SEKCIJA -->
+                <div class="control-card">
+                    <h3><i class="bi bi-file-earmark-code"></i> Config Editor</h3>
+                    <p><small>Upravljajte config.json fajlom - pregledajte, editujte, downloadujte ili uploadujte novu konfiguraciju.</small></p>
+                    
+                    <div class="grid">
+                        <button onclick="loadConfig()"><i class="bi bi-eye"></i> Pregled Config-a</button>
+                        <button class="secondary" onclick="downloadConfig()"><i class="bi bi-download"></i> Download Config</button>
+                        <label for="upload-config" class="outline" style="margin: 0; text-align: center; cursor: pointer;">
+                            <i class="bi bi-upload"></i> Upload Config
+                            <input type="file" id="upload-config" accept=".json" style="display: none;" onchange="uploadConfig(this)">
+                        </label>
+                    </div>
+                    <div class="grid" style="margin-top: 0.5rem;">
+                        <button class="contrast" onclick="restartServerService()"><i class="bi bi-arrow-clockwise"></i> Restart Server</button>
+                    </div>
+                    <small style="color: var(--pico-muted-color); display: block; margin-top: 0.25rem;">
+                        * Restartuje sistemski servis da bi se nova konfiguracija sigurno primijenila.
+                    </small>
+
+                    <div id="config-editor-container" style="display: none; margin-top: 1rem;">
+                        <h5>JSON Editor</h5>
+                        <textarea id="config-editor" rows="20" style="font-family: monospace; font-size: 12px; width: 100%; resize: vertical;"></textarea>
+                        <div class="grid" style="margin-top: 0.5rem;">
+                            <button onclick="saveConfig()"><i class="bi bi-save"></i> Sačuvaj Promjene</button>
+                            <button class="secondary" onclick="validateConfigJSON()"><i class="bi bi-check-circle"></i> Validiraj JSON</button>
+                            <button class="outline" onclick="hideConfigEditor()"><i class="bi bi-x"></i> Zatvori</button>
+                        </div>
+                        <div id="config-validation-msg" style="margin-top: 0.5rem;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="dashboard-header" style="display: none;">
+                <hgroup style="border-bottom: 2px solid var(--pico-primary); padding-bottom: 0.5rem;">
+                    <h2 id="current-room-title"><i class="bi bi-door-open"></i> Odaberite sobu</h2>
+                    <p><i class="bi bi-info-circle"></i> Status: <span id="global-status-text" class="info-badge">Nepoznato</span></p>
+                </hgroup>
+                
+                <div class="tab-nav">
+                    <button class="tab-btn active" data-tab="tab-esp">ESP Bridge</button>
+                    <button class="tab-btn" data-tab="tab-pin1" id="btn-tab-pin1">PIN Kontroler</button>
+                    <button class="tab-btn" data-tab="tab-pin2" id="btn-tab-pin2" style="display:none;">PIN Sekundarni</button>
+                    <button class="tab-btn" data-tab="tab-th" id="btn-tab-th">Termostat</button>
+                    <button class="tab-btn" data-tab="tab-scene" id="btn-tab-scene">Scene</button>
+                    <button class="tab-btn" data-tab="tab-hvac" id="btn-tab-hvac" style="display:none;">HVAC Kontroler</button>
+                </div>
+
+                <!-- TAB 1: ESP BRIDGE - KOMPLETNA KONTROLA -->
+                <div id="tab-esp" class="tab-panel active">
+                    <div class="grid">
+                        <button onclick="loadTabESP()">🔄 Osvježi ESP Status</button>
+                        <button class="secondary" onclick="sendCmd('RESTART')">⚠️ Restartuj ESP</button>
+                    </div>
+                    
+                    <!-- ============ STATUS PREGLED ============ -->
+                    <h4 style="margin-top: 1rem; border-bottom: 2px solid var(--pico-primary); padding-bottom: 0.5rem;">
+                        <i class="bi bi-info-circle"></i> Status Pregled
+                    </h4>
+                    <div class="status-grid">
+                        <div class="control-card">
+                            <h5><i class="bi bi-wifi"></i> WiFi Mreža</h5>
+                            <small><strong>SSID:</strong> <span id="esp-ssid" class="info-badge">...</span></small><br>
+                            <small><strong>Password:</strong> <span id="esp-password" class="info-badge">...</span></small><br>
+                            <small><strong>IP Adresa:</strong> <span id="esp-ip" class="info-badge">...</span></small><br>
+                            <small><strong>mDNS:</strong> <span id="esp-mdns" class="info-badge">...</span></small><br>
+                            <small><strong>Port:</strong> <span id="esp-port" class="info-badge">...</span></small><br>
+                            <small><strong>Signal (RSSI):</strong> <span id="esp-rssi" class="info-badge">...</span> dBm</small>
+                        </div>
+                        <div class="control-card">
+                            <h5><i class="bi bi-clock"></i> Vrijeme & Sunce</h5>
+                            <small><strong>UTC Vrijeme:</strong> <span id="esp-time" class="info-badge">...</span></small><br>
+                            <small><strong>Timezone Offset:</strong> <span id="esp-timezone" class="info-badge">...</span> min</small><br>
+                            <small><strong>DST Active:</strong> <span id="esp-dst" class="info-badge">...</span></small><br>
+                            <small><strong>Izlazak:</strong> <span id="esp-sunrise" class="info-badge success">...</span></small><br>
+                            <small><strong>Zalazak:</strong> <span id="esp-sunset" class="info-badge warning">...</span></small>
+                        </div>
+                        <div class="control-card">
+                            <h5><i class="bi bi-lightbulb"></i> Rasvjeta</h5>
+                            <small><strong>Relay State:</strong> <span id="esp-light-relay" class="info-badge">...</span></small><br>
+                            <small><strong>Control Mode:</strong> <span id="esp-light-mode" class="info-badge">...</span></small><br>
+                            <small><strong>Timer ON Type:</strong> <span id="esp-timer-on-type" class="info-badge">...</span></small><br>
+                            <small><strong>Timer OFF Type:</strong> <span id="esp-timer-off-type" class="info-badge">...</span></small><br>
+                            <small><strong>ON Time:</strong> <span id="esp-on-time" class="info-badge">...</span></small><br>
+                            <small><strong>OFF Time:</strong> <span id="esp-off-time" class="info-badge">...</span></small>
+                        </div>
+                        <div class="control-card">
+                            <h5><i class="bi bi-thermometer-half"></i> ESP Termostat</h5>
+                            <small><strong>Temperatura:</strong> <span id="esp-th-temp" class="info-badge">...</span>°C</small><br>
+                            <small><strong>Setpoint:</strong> <span id="esp-th-setpoint" class="info-badge">...</span>°C</small><br>
+                            <small><strong>Threshold:</strong> <span id="esp-th-threshold" class="info-badge">...</span>°C</small><br>
+                            <small><strong>Mode:</strong> <span id="esp-th-mode" class="info-badge">...</span></small><br>
+                            <small><strong>Valve:</strong> <span id="esp-th-valve" class="info-badge">...</span></small><br>
+                            <small><strong>Fan:</strong> <span id="esp-th-fan" class="info-badge">...</span></small><br>
+                            <small><strong>EMA Alpha:</strong> <span id="esp-ema-alpha" class="info-badge">...</span></small><br>
+                            <small><strong>Fluid Temp:</strong> <span id="esp-fluid-temp" class="info-badge">...</span>°C</small><br>
+                            <small><strong>Fluid Available:</strong> <span id="esp-fluid-avail" class="info-badge">...</span></small><br>
+                            <small><strong>Podno Grijanje:</strong> <span id="esp-th-floor-mode" class="info-badge">...</span></small>
+                        </div>
+                        <div class="control-card">
+                            <h5><i class="bi bi-exclamation-triangle"></i> SOS Status</h5>
+                            <small><strong>Active:</strong> <span id="esp-sos-active" class="info-badge">...</span></small><br>
+                            <div id="sos-controls" style="display:none; margin-top: 0.5rem;">
+                                <button class="outline danger" onclick="sendCmd('SOS_RESET')">🔴 RESET SOS Poziv</button>
+                            </div>
+                        </div>
+                        <div class="control-card">
+                            <h5><i class="bi bi-shield-check"></i> Watchdog & IR</h5>
+                            <small><strong>Ping Watchdog:</strong> <span id="esp-watchdog" class="info-badge">...</span></small><br>
+                            <small><strong>IR Protokol:</strong> <span id="esp-ir-protocol" class="info-badge">...</span></small><br>
+                        </div>
+                    </div>
+
+                    <!-- ============ MREŽNA KONFIGURACIJA ============ -->
+                    <h4 style="margin-top: 1.5rem; border-bottom: 2px solid var(--pico-primary); padding-bottom: 0.5rem;">
+                        <i class="bi bi-network-widearea"></i> Mrežna Konfiguracija
+                    </h4>
+                    <div class="grid">
+                        <div class="control-card">
+                            <h5><i class="bi bi-wifi"></i> WiFi Podešavanje</h5>
+                            <input type="text" id="inp-ssid" placeholder="SSID">
+                            <input type="text" id="inp-pass" placeholder="Password (prazno za open)">
+                            <button class="outline" onclick="setWifi()">💾 Postavi WiFi</button>
+                            <small style="color: var(--pico-muted-color);">* Restart potreban nakon izmjene</small>
+                        </div>
+                        <div class="control-card">
+                            <h5><i class="bi bi-hdd-network"></i> mDNS & Port</h5>
+                            <label>mDNS Ime
+                                <div class="grid">
+                                    <input type="text" id="inp-mdns" placeholder="npr. soba501">
+                                    <button class="outline" onclick="setMDNS()">💾 Set</button>
+                                </div>
+                            </label>
+                            <label>TCP/IP Port
+                                <div class="grid">
+                                    <input type="number" id="inp-port" placeholder="npr. 8020">
+                                    <button class="outline" onclick="setPort()">💾 Set</button>
+                                </div>
+                            </label>
+                            <small style="color: var(--pico-muted-color);">* Restart potreban nakon izmjene</small>
+                        </div>
+                    </div>
+
+                    <!-- ============ VRIJEME I ZONA ============ -->
+                    <h4 style="margin-top: 1.5rem; border-bottom: 2px solid var(--pico-primary); padding-bottom: 0.5rem;">
+                        <i class="bi bi-clock-history"></i> Vrijeme & Vremenska Zona
+                    </h4>
+                    <div class="control-card">
+                        <div class="grid">
+                            <div>
+                                <h6>Ručno Podešavanje Vremena</h6>
+                                <label>Datum (DDMMYY)
+                                    <input type="text" id="inp-date" placeholder="300126">
+                                </label>
+                                <label>Vrijeme (HHMMSS)
+                                    <input type="text" id="inp-time" placeholder="120000">
+                                </label>
+                                <button class="outline" onclick="setTime()">⏰ Postavi Vrijeme</button>
+                                <small style="color: var(--pico-muted-color);">* Koristiti samo ako NTP ne radi</small>
+                            </div>
+                            <div>
+                                <h6>Timezone & DST (Nisu implementirane u dokumentaciji)</h6>
+                                <small style="color: var(--pico-muted-color);">
+                                    Timezone i DST se automatski podešavaju preko NTP servera.<br>
+                                    Offset se vidi u STATUS pregledu.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ============ VANJSKA RASVJETA ============ -->
+                    <h4 style="margin-top: 1.5rem; border-bottom: 2px solid var(--pico-primary); padding-bottom: 0.5rem;">
+                        <i class="bi bi-lightbulb"></i> Vanjska Rasvjeta (Relay D32)
+                    </h4>
+                    <div class="control-card">
+                        <h5>Timer Kontrola</h5>
+                        <div class="grid">
+                            <label>Timer ON
+                                <input type="text" id="inp-timer-on" placeholder="SUNSET / SUNRISE / 2030 / OFF">
+                            </label>
+                            <label>Timer OFF
+                                <input type="text" id="inp-timer-off" placeholder="SUNRISE / SUNSET / 0630 / OFF">
+                            </label>
+                        </div>
+                        <button class="outline" onclick="setTimer()">💾 Postavi Timer</button>
+                        <small style="color: var(--pico-muted-color); display: block; margin-top: 0.75rem;">
+                            <i class="bi bi-info-circle"></i> Opcije: <strong>SUNSET</strong> (zalazak sunca), <strong>SUNRISE</strong> (izlazak sunca), 
+                            <strong>HHmm</strong> format (npr. 2030 za 20:30), ili <strong>OFF</strong> za isključivanje timera
+                        </small>
+                        <hr>
+                        <h6>Ručna Kontrola (Override Timera)</h6>
+                        <div class="grid">
+                            <button class="outline" onclick="sendCmd('OUTDOOR_LIGHT_ON')">💡 Svjetlo ON</button>
+                            <button class="outline secondary" onclick="sendCmd('OUTDOOR_LIGHT_OFF')">🌙 Svjetlo OFF</button>
+                        </div>
+                        <small style="color: var(--pico-muted-color); display: block; margin-top: 0.75rem;">* Ručna kontrola važi do sljedećeg timer događaja</small>
+                    </div>
+
+                    <!-- ============ PING WATCHDOG ============ -->
+                    <h4 style="margin-top: 1.5rem; border-bottom: 2px solid var(--pico-primary); padding-bottom: 0.5rem;">
+                        <i class="bi bi-shield-check"></i> Ping Watchdog
+                    </h4>
+                    <div class="control-card">
+                        <p>Ping Google servera svakih 60s. Nakon 10 propalih pokušaja uređaj se restartuje.</p>
+                        <div class="grid">
+                            <button class="outline" onclick="sendCmd('PINGWDG_ON')">✅ Uključi Watchdog</button>
+                            <button class="outline secondary" onclick="sendCmd('PINGWDG_OFF')">⛔ Isključi Watchdog</button>
+                        </div>
+                        <small style="color: var(--pico-muted-color); display: block; margin-top: 0.75rem;">* Isključiti ako mreža nema pristup internetu</small>
+                    </div>
+
+                    <!-- ============ IR KLIMA KONTROLA ============ -->
+                    <h4 style="margin-top: 1.5rem; border-bottom: 2px solid var(--pico-primary); padding-bottom: 0.5rem;">
+                        <i class="bi bi-broadcast"></i> IR Klima Kontrola
+                    </h4>
+                    <div class="control-card">
+                        <div class="grid">
+                            <div>
+                                <h6>IR Protokol (SET_IR_PROTOCOL)</h6>
+                                <label>Protocol ID (1-128)
+                                    <div class="grid">
+                                        <input type="number" id="inp-ir-protocol" min="1" max="128" placeholder="24">
+                                        <button class="outline" onclick="setIRProtocol()">💾 Postavi Protokol</button>
+                                    </div>
+                                </label>
+                            </div>
+                            <div>
+                                <h6>IR Komanda (SET_IR)</h6>
+                                <label>Mod rada
+                                    <select id="inp-ir-mode">
+                                        <option value="COOLING">COOLING</option>
+                                        <option value="HEATING">HEATING</option>
+                                        <option value="OFF">OFF</option>
+                                    </select>
+                                </label>
+                                <label>Temperatura (°C)
+                                    <input type="number" id="inp-ir-temp" min="5" max="40" placeholder="21">
+                                </label>
+                                <button class="outline" onclick="sendIRCommand()">📡 Pošalji IR Komandu</button>
+                                <small style="color: var(--pico-muted-color); display: block; margin-top: 0.5rem;">* Za OFF mod temperatura se ignoriše.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ============ ESP32 TERMOSTAT KONTROLA ============ -->
+                    <h4 style="margin-top: 1.5rem; border-bottom: 2px solid var(--pico-primary); padding-bottom: 0.5rem;">
+                        <i class="bi bi-thermometer-half"></i> ESP32 Termostat Kontrola
+                    </h4>
+                    <div class="grid">
+                        <div class="control-card">
+                            <h5>Setpoint & Mod</h5>
+                            <label>Setpoint Temperatura (°C)
+                                <input type="number" id="inp-esp-th-setpoint" min="5" max="40" placeholder="24">
+                                <button class="outline" onclick="setESPThSetpoint()">💾 Postavi</button>
+                            </label>
+                            <hr>
+                            <div class="grid">
+                                <button class="outline" onclick="sendCmd('TH_HEATING')">🔥 Grijanje</button>
+                                <button class="outline" onclick="sendCmd('TH_COOLING')">❄️ Hlađenje</button>
+                            </div>
+                            <div class="grid">
+                                <button class="outline" onclick="sendCmd('TH_ON')">✅ Uključi</button>
+                                <button class="outline secondary" onclick="sendCmd('TH_OFF')">⛔ Isključi</button>
+                            </div>
+                            <hr>
+                            <small><strong>Podno Grijanje (Floor Mode):</strong></small>
+                            <div class="grid">
+                                <button class="outline" onclick="sendCmd('TH_FLOOR_ON')">🏠 Floor ON</button>
+                                <button class="outline secondary" onclick="sendCmd('TH_FLOOR_OFF')">🚫 Floor OFF</button>
+                            </div>
+                            <small style="color: var(--pico-muted-color); display: block; margin-top: 0.5rem;">Samo u modu grijanja: 1. brzina ventilatora se ne pali — valve se aktivira kao kod 1. brzine. U hlađenju nema promjene.</small>
+                        </div>
+                        <div class="control-card">
+                            <h5>Napredna Podešavanja</h5>
+                            <label>Diferenca (0.1°C - 5.0°C)
+                                <input type="number" id="inp-esp-th-diff" min="1" max="50" placeholder="5" step="1">
+                                <button class="outline" onclick="setESPThDiff()">💾 Set Diff</button>
+                            </label>
+                            <small>Vrijednost 5 = 0.5°C, 10 = 1.0°C itd.</small>
+                            <hr>
+                            <label>EMA Filter Alpha (0.1 - 1.0)
+                                <input type="number" id="inp-esp-th-ema" min="1" max="10" placeholder="5" step="1">
+                                <button class="outline" onclick="setESPThEMA()">💾 Set EMA</button>
+                            </label>
+                            <small>Vrijednost 5 = 0.5 alpha. Manji = glađe, Veći = brže</small>
+                        </div>
+                    </div>
+
+                    <!-- ============ GPIO PIN KONTROLA ============ -->
+                    <h4 style="margin-top: 1.5rem; border-bottom: 2px solid var(--pico-primary); padding-bottom: 0.5rem;">
+                        <i class="bi bi-cpu"></i> ESP32 GPIO Kontrola
+                    </h4>
+                    <div class="control-card">
+                         <h5>Direktna Pin Kontrola</h5>
+                         <p>Kontrola slobodnih GPIO pinova na ESP32 modulu.</p>
+                         <div class="grid">
+                             <label>Odaberi GPIO Pin
+                                 <select id="sel-esp-pin">
+                                     <option value="">Učitavam pinove...</option>
+                                 </select>
+                             </label>
+                             <label>Pulse Trajanje (sec)
+                                 <input type="number" id="inp-esp-pulse" min="1" max="86400" value="2" placeholder="2">
+                             </label>
+                         </div>
+                         <div class="grid">
+                             <button class="outline" onclick="ctrlEspPin('ESP_SET_PIN')">⬆️ HIGH</button>
+                             <button class="outline secondary" onclick="ctrlEspPin('ESP_RESET_PIN')">⬇️ LOW</button>
+                             <button class="outline contrast" onclick="ctrlEspPin('ESP_PULSE_PIN')">⚡ PULSE</button>
+                             <button class="outline" onclick="loadAvailablePins()">🔄 Osvježi Pinove</button>
+                         </div>
+                         <small style="color: var(--pico-muted-color); display: block; margin-top: 1rem;">
+                             * GPIO 34, 35, 36 su samo ulazni (Input Only)<br>
+                             * Nakon prve SET/RESET komande, pin postaje izlazni do restarta
+                         </small>
+                    </div>
+
+                    <!-- ============ FIRMWARE MANAGEMENT ============ -->
+                    <h4 style="margin-top: 1.5rem; border-bottom: 2px solid var(--pico-primary); padding-bottom: 0.5rem;">
+                        <i class="bi bi-download"></i> Firmware Management
+                    </h4>
+                    
+                    <!-- Verzija ESP32 Firmware -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-info-circle"></i> ESP32 Firmware Verzija</h5>
+                        <div class="grid">
+                            <div>
+                                <small><strong>Verzija:</strong> <span id="esp-fw-version" class="info-badge">...</span></small><br>
+                                <small><strong>Build Number:</strong> <span id="esp-fw-build" class="info-badge">...</span></small><br>
+                                <small><strong>Build Date:</strong> <span id="esp-fw-date" class="info-badge">...</span></small>
+                            </div>
+                            <div>
+                                <button class="outline" onclick="checkESPVersion()">🔄 Provjeri Verziju</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- OTA Update ESP32 -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-cloud-upload"></i> OTA Update ESP32 Firmware</h5>
+                        <p>Upload novog firmware-a direktno na ESP32 modul. Uređaj će se automatski restartovati nakon uspješnog update-a.</p>
+                        <label for="esp-fw-file">Odaberi Firmware Fajl (.bin)
+                            <input type="file" id="esp-fw-file" accept=".bin">
+                        </label>
+                        <button class="outline" onclick="uploadESPFirmware()">📤 Upload & Update ESP32</button>
+                        <div id="esp-upload-progress" style="display: none; margin-top: 1rem;">
+                            <progress id="esp-progress-bar" max="100" value="0"></progress>
+                            <p><span id="esp-upload-status">Uploading...</span> <span id="esp-upload-percent">0%</span></p>
+                        </div>
+                        <small style="color: var(--pico-muted-color); display: block; margin-top: 0.75rem;">
+                            ⚠️ VAŽNO: Ne prekidajte napajanje tokom update-a!<br>
+                            * ESP32 će se automatski restartovati nakon update-a<br>
+                            * Update traje 30-60 sekundi
+                        </small>
+                    </div>
+                </div>
+
+                <!-- TAB 2: PIN PRIMARY -->
+                <div id="tab-pin1" class="tab-panel">
+                    <div class="grid">
+                         <button onclick="loadTabPIN(currentRoom.pin_id, 'pin1')">🔄 Osvježi PIN 1</button>
+                         <button class="secondary" onclick="sendCtrlCmd(currentRoom.pin_id, 'RESTART_CTRL')">⚠️ Restartuj Kontroler</button>
+                    </div>
+                    
+                    <!-- Firmware Info & System ID -->
+                    <div class="grid">
+                        <div class="control-card">
+                            <h5><i class="bi bi-info-circle"></i> Firmware & System ID</h5>
+                            <div class="grid">
+                                <div>
+                                    <small><strong>Firmware Verzija:</strong></small><br>
+                                    <span id="pin1-fw-version" class="info-badge">...</span>
+                                </div>
+                                <div>
+                                    <small><strong>System ID:</strong></small><br>
+                                    <span id="pin1-sysid" class="info-badge">...</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="control-card">
+                            <h5><i class="bi bi-door-open"></i> Kontrola Vrata</h5>
+                            <button class="outline" onclick="sendCtrlCmd(currentRoom.pin_id, 'OPEN_DOOR')">🔓 Otvori Vrata</button>
+                        </div>
+                    </div>
+
+                    <!-- Log Događaja -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-journal-text"></i> Log Događaja</h5>
+                        <div id="pin1-log" class="log-box" style="height:120px; margin-bottom: 0.5rem;">Kliknite "Read Log" za učitavanje...</div>
+                        <div class="grid">
+                            <button class="outline" onclick="readPinLog('pin1', currentRoom.pin_id)">📋 Read Log</button>
+                            <button class="outline secondary" onclick="sendCtrlCmd(currentRoom.pin_id, 'DELETE_LOG')">🗑️ Delete Log</button>
+                        </div>
+                    </div>
+
+                    <!-- Upravljanje Lozinkama -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-key"></i> Upravljanje Lozinkama</h5>
+                        <div class="grid">
+                            <div>
+                                <small><strong>Guest Password (ID=1):</strong></small><br>
+                                <span id="pin1-guest-password" class="info-badge">...</span>
+                            </div>
+                        </div>
+                        <hr>
+                        <h6>Postavi Novu Lozinku</h6>
+                        <div class="grid">
+                            <select id="sel-pin1-type" onchange="updatePin1InputMaxLength()">
+                                <option value="GUEST">GOST (1) - 4 cifre</option>
+                                <option value="MAID">SOBARICA (H) - 4 cifre</option>
+                                <option value="MANAGER">MANAGER (M) - 4 cifre</option>
+                                <option value="SERVICE">SERVIS (S) - 5 cifara</option>
+                            </select>
+                            <input type="text" id="inp-pin1-val" placeholder="Lozinka (4 cifre)" maxlength="4" pattern="[0-9]*" inputmode="numeric">
+                            <button class="outline" onclick="setPinPassword(currentRoom.pin_id, 'sel-pin1-type', 'inp-pin1-val', 'pin1')">💾 Postavi</button>
+                        </div>
+                        <small><i class="bi bi-info-circle"></i> Guest lozinka zahteva expiry date (automatski 30 dana od danas)</small>
+                    </div>
+                    
+                    <!-- Konfiguracija System ID -->
+                    <div class="control-card">
+                         <h5><i class="bi bi-gear"></i> System ID Konfiguracija</h5>
+                         <div class="grid">
+                             <label>Novi System ID (decimal, 5 cifara)
+                                 <input type="text" id="inp-pin1-new-sysid" placeholder="npr. 12345" maxlength="5" pattern="[0-9]{5}" inputmode="numeric">
+                             </label>
+                             <button class="outline" onclick="setPinSysId(currentRoom.pin_id, 'inp-pin1-new-sysid', 'pin1')">💾 Set System ID</button>
+                         </div>
+                         <small style="color: var(--pico-muted-color);">Raspon: 10000-65000</small>
+                    </div>
+
+                    <!-- Firmware & Ext.Flash Update - NA KRAJU -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-upload"></i> Firmware & Ext.Flash Update</h5>
+                        
+                        <!-- Slot Status Display -->
+                        <div class="grid">
+                            <div>
+                                <strong>Slot 0 (Firmware):</strong><br>
+                                <small id="pin1-slot0-status" style="font-family:monospace;">...</small>
+                            </div>
+                            <div>
+                                <strong>Slot 4 (Ext.Flash):</strong><br>
+                                <small id="pin1-slot4-status" style="font-family:monospace;">...</small>
+                            </div>
+                        </div>
+
+                        <!-- Upload Controls -->
+                        <div class="grid" style="margin-top:0.5rem;">
+                            <div>
+                                <label>Firmware (.bin)
+                                    <input type="file" id="pin1-fw-file" accept=".bin">
+                                </label>
+                                <button onclick="uploadPinFirmware(0, 'pin1-fw-file', 'pin1')">📤 Upload Firmware</button>
+                            </div>
+                            <div>
+                                <label>Ext.Flash (.bin)
+                                    <input type="file" id="pin1-ext-file" accept=".bin">
+                                </label>
+                                <button onclick="uploadPinFirmware(4, 'pin1-ext-file', 'pin1')">📤 Upload Ext.Flash</button>
+                            </div>
+                        </div>
+
+                        <!-- Update Controls - SA DVA DUGMETA -->
+                        <div class="grid" style="margin-top: 1rem;">
+                            <div>
+                                <button class="contrast" onclick="startPinFirmwareUpdate('pin1', 0)">⚡ Update Firmware (Slot 0)</button>
+                                <div id="pin1-fw-update-progress" style="display:none; margin-top:0.5rem;">
+                                    <progress id="pin1-fw-progress-bar" max="100" value="0"></progress>
+                                    <small id="pin1-fw-progress-text">Priprema...</small>
+                                </div>
+                            </div>
+                            <div>
+                                <button class="contrast" onclick="startPinExtFlashUpdate('pin1', 4)">⚡ Update Ext.Flash (Slot 4)</button>
+                                <div id="pin1-ext-update-progress" style="display:none; margin-top:0.5rem;">
+                                    <progress id="pin1-ext-progress-bar" max="100" value="0"></progress>
+                                    <small id="pin1-ext-progress-text">Priprema...</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: PIN SECONDARY -->
+                <div id="tab-pin2" class="tab-panel">
+                    <div class="grid">
+                         <button onclick="loadTabPIN(currentRoom.sec_pin_id, 'pin2')">🔄 Osvježi PIN 2</button>
+                         <button class="secondary" onclick="sendCtrlCmd(currentRoom.sec_pin_id, 'RESTART_CTRL')">⚠️ Restartuj Kontroler</button>
+                    </div>
+                    
+                    <!-- Firmware Info & System ID -->
+                    <div class="grid">
+                        <div class="control-card">
+                            <h5><i class="bi bi-info-circle"></i> Firmware & System ID</h5>
+                            <div class="grid">
+                                <div>
+                                    <small><strong>Firmware Verzija:</strong></small><br>
+                                    <span id="pin2-fw-version" class="info-badge">...</span>
+                                </div>
+                                <div>
+                                    <small><strong>System ID:</strong></small><br>
+                                    <span id="pin2-sysid" class="info-badge">...</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="control-card">
+                            <h5><i class="bi bi-door-open"></i> Kontrola Vrata (Sekundarni)</h5>
+                            <button class="outline" onclick="sendCtrlCmd(currentRoom.sec_pin_id, 'OPEN_DOOR')">🔓 Otvori Vrata 2</button>
+                        </div>
+                    </div>
+
+                    <!-- Upravljanje Lozinkama -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-key"></i> Upravljanje Lozinkama</h5>
+                        <div class="grid">
+                            <div>
+                                <small><strong>Guest Password (ID=1):</strong></small><br>
+                                <span id="pin2-guest-password" class="info-badge">...</span>
+                            </div>
+                        </div>
+                        <hr>
+                        <h6>Postavi Novu Lozinku</h6>
+                        <div class="grid">
+                            <select id="sel-pin2-type" onchange="updatePin2InputMaxLength()">
+                                <option value="GUEST">GOST (1) - 4 cifre</option>
+                                <option value="MAID">SOBARICA (H) - 4 cifre</option>
+                                <option value="MANAGER">MANAGER (M) - 4 cifre</option>
+                                <option value="SERVICE">SERVIS (S) - 5 cifara</option>
+                            </select>
+                            <input type="text" id="inp-pin2-val" placeholder="Lozinka (4 cifre)" maxlength="4" pattern="[0-9]*" inputmode="numeric">
+                            <button class="outline" onclick="setPinPassword(currentRoom.sec_pin_id, 'sel-pin2-type', 'inp-pin2-val', 'pin2')">💾 Postavi</button>
+                        </div>
+                        <small><i class="bi bi-info-circle"></i> Guest lozinka zahteva expiry date (automatski 30 dana od danas)</small>
+                    </div>
+                    
+                    <!-- Konfiguracija System ID -->
+                    <div class="control-card">
+                         <h5><i class="bi bi-gear"></i> System ID Konfiguracija</h5>
+                         <div class="grid">
+                             <label>Novi System ID (decimal, 5 cifara)
+                                 <input type="text" id="inp-pin2-new-sysid" placeholder="npr. 12345" maxlength="5" pattern="[0-9]{5}" inputmode="numeric">
+                             </label>
+                             <button class="outline" onclick="setPinSysId(currentRoom.sec_pin_id, 'inp-pin2-new-sysid', 'pin2')">💾 Set System ID</button>
+                         </div>
+                         <small style="color: var(--pico-muted-color);">Raspon: 10000-65000</small>
+                    </div>
+
+                    <!-- Firmware & Ext.Flash Update - NA KRAJU -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-upload"></i> Firmware & Ext.Flash Update</h5>
+                        <!-- Slot Status Display -->
+                        <div class="grid">
+                            <div>
+                                <strong>Slot 3 (Firmware):</strong><br>
+                                <small id="pin2-slot3-status" style="font-family:monospace">...</small>
+                            </div>
+                            <div>
+                                <strong>Slot 7 (Ext.Flash):</strong><br>
+                                <small id="pin2-slot7-status" style="font-family:monospace">...</small>
+                            </div>
+                        </div>
+                        <!-- Upload Controls -->
+                        <div class="grid" style="margin-top:0.5rem;">
+                            <div>
+                                <label for="pin2-fw-file">Firmware (.bin)</label>
+                                <input type="file" id="pin2-fw-file" accept=".bin">
+                                <button onclick="uploadPinFirmware(3, 'pin2-fw-file', 'pin2')">📤 Upload Firmware</button>
+                            </div>
+                            <div>
+                                <label for="pin2-ext-file">Ext.Flash (.bin)</label>
+                                <input type="file" id="pin2-ext-file" accept=".bin">
+                                <button onclick="uploadPinFirmware(7, 'pin2-ext-file', 'pin2')">📤 Upload Ext.Flash</button>
+                            </div>
+                        </div>
+                        <!-- Update Controls - SA DVA DUGMETA -->
+                        <div class="grid" style="margin-top: 1rem;">
+                            <div>
+                                <button class="contrast" onclick="startPinFirmwareUpdate('pin2', 3)">⚡ Update Firmware (Slot 3)</button>
+                                <div id="pin2-fw-update-progress" style="display:none; margin-top:0.5rem;">
+                                    <progress id="pin2-fw-progress-bar" max="100" value="0"></progress>
+                                    <small id="pin2-fw-progress-text">Priprema...</small>
+                                </div>
+                            </div>
+                            <div>
+                                <button class="contrast" onclick="startPinExtFlashUpdate('pin2', 7)">⚡ Update Ext.Flash (Slot 7)</button>
+                                <div id="pin2-ext-update-progress" style="display:none; margin-top:0.5rem;">
+                                    <progress id="pin2-ext-progress-bar" max="100" value="0"></progress>
+                                    <small id="pin2-ext-progress-text">Priprema...</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: THERMOSTAT -->
+                <div id="tab-th" class="tab-panel">
+                    <div class="grid">
+                         <button onclick="loadTabTH()">🔄 Osvježi Termostat</button>
+                         <button class="secondary" onclick="sendCtrlCmd(currentRoom.th_id, 'RESTART_CTRL')">⚠️ Restartuj Kontroler</button>
+                    </div>
+                    
+                    <!-- Firmware Info -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-info-circle"></i> Firmware Verzija</h5>
+                        <span id="th-fw-version" class="info-badge">...</span>
+                    </div>
+
+                    <!-- Status & Trenutna Temperatura -->
+                    <div class="grid">
+                        <div class="control-card">
+                            <h5><i class="bi bi-thermometer-half"></i> Trenutno Stanje</h5>
+                            <h1><span id="th-temp">--</span>°C</h1>
+                            <small><strong>Setpoint:</strong> <span id="th-setpoint">--</span>°C</small><br>
+                            <small><strong>Mode:</strong> <span id="th-mode" class="info-badge">--</span></small><br>
+                            <small><strong>Fan Speed:</strong> <span id="th-fan-speed">--</span></small><br>
+                            <small><strong>Fan Control:</strong> <span id="th-fan-ctrl">--</span></small>
+                        </div>
+                        <div class="control-card">
+                            <h5><i class="bi bi-sliders"></i> Temperatura Limiti</h5>
+                            <small><strong>Setpoint Max:</strong> <span id="th-sp-max">--</span>°C</small><br>
+                            <small><strong>Setpoint Min:</strong> <span id="th-sp-min">--</span>°C</small><br>
+                            <hr>
+                            <h6>Postavi Novu Temperaturu</h6>
+                            <input type="range" min="15" max="30" value="22" id="rng-th-set" oninput="document.getElementById('lbl-th-set').innerText=this.value">
+                            <p>Nova: <span id="lbl-th-set">22</span>°C</p>
+                            <button class="outline" onclick="setThTemp()">🌡️ Postavi Temp</button>
+                        </div>
+                    </div>
+
+                    <!-- Kontrola Režima -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-toggle-on"></i> Kontrola Režima Rada</h5>
+                        <div class="grid">
+                            <button class="outline" onclick="sendCtrlCmd(currentRoom.th_id, 'SET_THST_HEATING')">🔥 Grijanje</button>
+                            <button class="outline" onclick="sendCtrlCmd(currentRoom.th_id, 'SET_THST_COOLING')">❄️ Hlađenje</button>
+                            <button class="outline" onclick="sendCtrlCmd(currentRoom.th_id, 'SET_THST_ON')">✅ Uključi</button>
+                            <button class="outline secondary" onclick="sendCtrlCmd(currentRoom.th_id, 'SET_THST_OFF')">⛔ Isključi</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Forwarding & Enable Kontrole -->
+                    <div class="grid">
+                        <div class="control-card">
+                            <h5><i class="bi bi-arrow-repeat"></i> Forwarding (Prenošenje Stanja)</h5>
+                            <label>
+                                <input type="checkbox" id="chk-fwd-heating" onchange="setThForward('SET_FWD_HEATING', this.checked)">
+                                Forward Heating (Prenesi grijanje)
+                            </label>
+                            <label>
+                                <input type="checkbox" id="chk-fwd-cooling" onchange="setThForward('SET_FWD_COOLING', this.checked)">
+                                Forward Cooling (Prenesi hlađenje)
+                            </label>
+                            <small><i class="bi bi-info-circle"></i> Forwarding omogućava prenošenje stanja na povezane uređaje</small>
+                        </div>
+                        <div class="control-card">
+                            <h5><i class="bi bi-shield-check"></i> Globalne Dozvole</h5>
+                            <label>
+                                <input type="checkbox" id="chk-enable-heating" onchange="setThEnable('SET_ENABLE_HEATING', this.checked)">
+                                Enable Heating (Dozvoli grijanje)
+                            </label>
+                            <label>
+                                <input type="checkbox" id="chk-enable-cooling" onchange="setThEnable('SET_ENABLE_COOLING', this.checked)">
+                                Enable Cooling (Dozvoli hlađenje)
+                            </label>
+                            <small><i class="bi bi-info-circle"></i> Globalne dozvole omogućavaju/onemogoućavaju režime rada</small>
+                        </div>
+                    </div>
+
+                    <!-- Pin Kontrole (Pinovi 1-6) -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-outlet"></i> Pin Kontrole (Releji & Ventilator)</h5>
+                        <div class="grid">
+                            <button class="outline" onclick="setThPin(1, 1)">Pin 1 ON (Light)</button>
+                            <button class="outline secondary" onclick="setThPin(1, 0)">Pin 1 OFF</button>
+                            <button class="outline" onclick="setThPin(2, 1)">Pin 2 ON</button>
+                            <button class="outline secondary" onclick="setThPin(2, 0)">Pin 2 OFF</button>
+                            <button class="outline" onclick="setThPin(3, 1)">Pin 3 ON (Fan Off)</button>
+                            <button class="outline secondary" onclick="setThPin(3, 0)">Pin 3 OFF</button>
+                            <button class="outline" onclick="setThPin(4, 1)">Pin 4 ON</button>
+                            <button class="outline secondary" onclick="setThPin(4, 0)">Pin 4 OFF</button>
+                            <button class="outline" onclick="setThPin(5, 1)">Pin 5 ON (Fan Off)</button>
+                            <button class="outline secondary" onclick="setThPin(5, 0)">Pin 5 OFF</button>
+                            <button class="outline" onclick="setThPin(6, 1)">Pin 6 ON (Fan Off)</button>
+                            <button class="outline secondary" onclick="setThPin(6, 0)">Pin 6 OFF</button>
+                        </div>
+                        <p><small><i class="bi bi-info-circle"></i> Pin 1 kontroliše svjetlo, pinovi 3/5/6 isključuju ventilator kad se aktiviraju</small></p>
+                    </div>
+
+                    <!-- Language Settings -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-translate"></i> Jezik Ekrana</h5>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <select id="th-lang-select" style="flex: 1;">
+                                <option value="0">Srpski (SRB)</option>
+                                <option value="1">English (ENG)</option>
+                                <option value="2">Deutsch (GER)</option>
+                            </select>
+                            <button onclick="setThLanguage()">Postavi Jezik</button>
+                        </div>
+                    </div>
+
+                    <!-- Firmware & Ext.Flash Update - NA KRAJU -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-upload"></i> Firmware & Ext.Flash Update</h5>
+                        <!-- Slot Status Display -->
+                        <div class="grid">
+                            <div>
+                                <strong>Slot 1 (Firmware):</strong><br>
+                                <small id="th-slot1-status" style="font-family:monospace">...</small>
+                            </div>
+                            <div>
+                                <strong>Slot 5 (Ext.Flash):</strong><br>
+                                <small id="th-slot5-status" style="font-family:monospace">...</small>
+                            </div>
+                        </div>
+                        <!-- Upload Controls -->
+                        <div class="grid" style="margin-top:0.5rem;">
+                            <div>
+                                <label for="th-fw-file">Firmware (.bin)</label>
+                                <input type="file" id="th-fw-file" accept=".bin">
+                                <button onclick="uploadThFirmware(1, 'th-fw-file', 'th')">📤 Upload Firmware</button>
+                            </div>
+                            <div>
+                                <label for="th-ext-file">Ext.Flash (.bin)</label>
+                                <input type="file" id="th-ext-file" accept=".bin">
+                                <button onclick="uploadThFirmware(5, 'th-ext-file', 'th')">📤 Upload Ext.Flash</button>
+                            </div>
+                        </div>
+                        <!-- Update Controls - SA DVA DUGMETA -->
+                        <div class="grid" style="margin-top: 1rem;">
+                            <div>
+                                <button class="contrast" onclick="startThFirmwareUpdate('th', 1)">⚡ Update Firmware (Slot 1)</button>
+                                <div id="th-fw-update-progress" style="display:none; margin-top:0.5rem;">
+                                    <progress id="th-fw-progress-bar" max="100" value="0"></progress>
+                                    <small id="th-fw-progress-text">Priprema...</small>
+                                </div>
+                            </div>
+                            <div>
+                                <button class="contrast" onclick="startThExtFlashUpdate('th', 5)">⚡ Update Ext.Flash (Slot 5)</button>
+                                <div id="th-ext-update-progress" style="display:none; margin-top:0.5rem;">
+                                    <progress id="th-ext-progress-bar" max="100" value="0"></progress>
+                                    <small id="th-ext-progress-text">Priprema...</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 5: SCENES -->
+                <div id="tab-scene" class="tab-panel">
+                    <div class="grid">
+                        <button onclick="loadTabScene()">🔄 Osvježi Scene</button>
+                        <button class="secondary" onclick="sendCtrlCmd(currentRoom.scene_id, 'RESTART_CTRL')">⚠️ Restartuj Kontroler</button>
+                    </div>
+
+                    <!-- Firmware Info -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-cpu"></i> Firmware Info</h5>
+                        <small><strong>Verzija:</strong></small><br>
+                        <span id="scene-fw-version" class="info-badge">...</span>
+                    </div>
+
+                    <!-- Room Status (Card Stacker) -->
+                    <div class="info-card">
+                        <h5><i class="bi bi-door-open"></i> Status Sobe</h5>
+                        <p><strong>Odlagač:</strong> <span id="scene-room-status">...</span></p>
+                    </div>
+
+                    <!-- Guest Temperature Settings -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-thermometer-half"></i> Postavke Temperature (Guest In/Out)</h5>
+                        <div class="grid">
+                            <div>
+                                <label>Guest IN Temp: <strong id="scene-guest-in-temp">...</strong>°C</label>
+                                <input type="number" id="scene-guest-in-input" min="5" max="40" value="22" style="width:80px">
+                                <button onclick="setSceneGuestTemp('IN')">Postavi IN</button>
+                            </div>
+                            <div>
+                                <label>Guest OUT Temp: <strong id="scene-guest-out-temp">...</strong>°C</label>
+                                <input type="number" id="scene-guest-out-input" min="5" max="40" value="18" style="width:80px">
+                                <button onclick="setSceneGuestTemp('OUT')">Postavi OUT</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- QR Code Management -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-qr-code"></i> QR Code (WiFi)</h5>
+                        <p><strong>Trenutni QR:</strong> <code id="scene-qr-code" style="word-break:break-all">...</code></p>
+                        <input type="text" id="scene-qr-input" placeholder="WIFI:S:MyNet;T:WPA;P:1234;;" maxlength="128" style="width:100%">
+                        <button onclick="setSceneQRCode()">Postavi QR Code</button>
+                    </div>
+
+                    <!-- Pin Controls (Scenes & Buzzer) -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-outlet"></i> Pin Kontrole (Scene & Buzzer)</h5>
+                        <div class="grid">
+                            <button class="outline" onclick="setScenePin(1, 1)">Pin 1 ON (Scene 1)</button>
+                            <button class="outline secondary" onclick="setScenePin(1, 0)">Pin 1 OFF</button>
+                            <button class="outline" onclick="setScenePin(2, 1)">Pin 2 ON (Scene 2)</button>
+                            <button class="outline secondary" onclick="setScenePin(2, 0)">Pin 2 OFF</button>
+                            <button class="outline" onclick="setScenePin(3, 1)">Pin 3 ON (Scene 3)</button>
+                            <button class="outline secondary" onclick="setScenePin(3, 0)">Pin 3 OFF</button>
+                            <button class="outline" onclick="setScenePin(4, 1)">Pin 4 ON (Buzzer)</button>
+                            <button class="outline secondary" onclick="setScenePin(4, 0)">Pin 4 OFF</button>
+                            <button class="outline" onclick="setScenePin(5, 1)">Pin 5 ON</button>
+                            <button class="outline secondary" onclick="setScenePin(5, 0)">Pin 5 OFF</button>
+                            <button class="outline" onclick="setScenePin(6, 1)">Pin 6 ON</button>
+                            <button class="outline secondary" onclick="setScenePin(6, 0)">Pin 6 OFF</button>
+                        </div>
+                        <p><small><i class="bi bi-info-circle"></i> Pinovi 1-3 aktiviraju scene, Pin 4 je buzzer</small></p>
+                    </div>
+
+                    <!-- Language Settings -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-translate"></i> Jezik Ekrana</h5>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <select id="scene-lang-select" style="flex: 1;">
+                                <option value="0">Srpski (SRB)</option>
+                                <option value="1">English (ENG)</option>
+                                <option value="2">Deutsch (GER)</option>
+                            </select>
+                            <button onclick="setSceneLanguage()">Postavi Jezik</button>
+                        </div>
+                    </div>
+
+                    <!-- Firmware & Ext.Flash Update - NA KRAJU -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-upload"></i> Firmware & Ext.Flash Update</h5>
+                        <!-- Slot Status Display -->
+                        <div class="grid">
+                            <div>
+                                <strong>Slot 2 (Firmware):</strong><br>
+                                <small id="scene-slot2-status" style="font-family:monospace">...</small>
+                            </div>
+                            <div>
+                                <strong>Slot 6 (Ext.Flash):</strong><br>
+                                <small id="scene-slot6-status" style="font-family:monospace">...</small>
+                            </div>
+                        </div>
+                        <!-- Upload Controls -->
+                        <div class="grid" style="margin-top:0.5rem;">
+                            <div>
+                                <label for="scene-fw-file">Firmware (.bin)</label>
+                                <input type="file" id="scene-fw-file" accept=".bin">
+                                <button onclick="uploadSceneFirmware(2, 'scene-fw-file', 'scene')">📤 Upload Firmware</button>
+                            </div>
+                            <div>
+                                <label for="scene-ext-file">Ext.Flash (.bin)</label>
+                                <input type="file" id="scene-ext-file" accept=".bin">
+                                <button onclick="uploadSceneFirmware(6, 'scene-ext-file', 'scene')">📤 Upload Ext.Flash</button>
+                            </div>
+                        </div>
+                        <!-- Update Controls - SA DVA DUGMETA -->
+                        <div class="grid" style="margin-top: 1rem;">
+                            <div>
+                                <button class="contrast" onclick="startSceneFirmwareUpdate('scene', 2)">⚡ Update Firmware (Slot 2)</button>
+                                <div id="scene-fw-update-progress" style="display:none; margin-top:0.5rem;">
+                                    <progress id="scene-fw-progress-bar" max="100" value="0"></progress>
+                                    <small id="scene-fw-progress-text">Priprema...</small>
+                                </div>
+                            </div>
+                            <div>
+                                <button class="contrast" onclick="startSceneExtFlashUpdate('scene', 6)">⚡ Update Ext.Flash (Slot 6)</button>
+                                <div id="scene-ext-update-progress" style="display:none; margin-top:0.5rem;">
+                                    <progress id="scene-ext-progress-bar" max="100" value="0"></progress>
+                                    <small id="scene-ext-progress-text">Priprema...</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 6: HVAC KONTROLER -->
+                <div id="tab-hvac" class="tab-panel">
+                    <div class="grid">
+                        <button onclick="loadTabHVAC()">🔄 Osvježi HVAC Status</button>
+                        <button class="secondary" onclick="sendHvacCmd('RESTART')">⚠️ Restartuj HVAC Kontroler</button>
+                    </div>
+
+                    <!-- Card 1: Main Mode -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-toggles"></i> Glavni Režim Rada</h5>
+                        <p><strong>Trenutni mod:</strong> <span id="hvac-mode" class="info-badge">...</span></p>
+                        <div class="grid">
+                            <button class="outline" onclick="sendHvacCmd('TH_HEATING')">🔥 Grijanje</button>
+                            <button class="outline" onclick="sendHvacCmd('TH_COOLING')">❄️ Hlađenje</button>
+                            <button class="outline secondary" onclick="sendHvacCmd('TH_OFF')">⛔ Isključi</button>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Pump Control -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-arrow-repeat"></i> Kontrola Pumpi</h5>
+                        <!-- Pumpa Podno -->
+                        <h6>Pumpa Podno</h6>
+                        <div class="grid">
+                            <div>
+                                <label for="hvac-pump-podno-mode">
+                                    <input type="checkbox" id="hvac-pump-podno-mode" role="switch" onchange="setHvacPumpMode(1, this.checked)">
+                                    Ručni Mod
+                                </label>
+                                <small>Status: <span id="hvac-pump-podno-mode-status">AUTO</span></small>
+                            </div>
+                            <div>
+                                <label for="hvac-pump-podno-manual">
+                                    <input type="checkbox" id="hvac-pump-podno-manual" role="switch" onchange="setHvacPumpManual(1, this.checked)">
+                                    Ručno ON/OFF
+                                </label>
+                                <small>Stanje: <span id="hvac-pump-podno-state">...</span></small>
+                            </div>
+                        </div>
+                        <small>Logičko stanje: <span id="hvac-pump-podno-expected">...</span> | **Stvarno stanje (ulaz): <span id="hvac-pump-podno-input" class="info-badge">...</span>**</small>
+                        <hr>
+                        <!-- Pumpa Fancoil -->
+                        <h6>Pumpa Fancoil</h6>
+                        <div class="grid">
+                            <div>
+                                <label for="hvac-pump-fancoil-mode">
+                                    <input type="checkbox" id="hvac-pump-fancoil-mode" role="switch" onchange="setHvacPumpMode(2, this.checked)">
+                                    Ručni Mod
+                                </label>
+                                <small>Status: <span id="hvac-pump-fancoil-mode-status">AUTO</span></small>
+                            </div>
+                            <div>
+                                <label for="hvac-pump-fancoil-manual">
+                                    <input type="checkbox" id="hvac-pump-fancoil-manual" role="switch" onchange="setHvacPumpManual(2, this.checked)">
+                                    Ručno ON/OFF
+                                </label>
+                                <small>Stanje: <span id="hvac-pump-fancoil-state">...</span></small>
+                            </div>
+                        </div>
+                        <small>Logičko stanje: <span id="hvac-pump-fancoil-expected">...</span> | **Stvarno stanje (ulaz): <span id="hvac-pump-fancoil-input" class="info-badge">...</span>**</small>
+                    </div>
+
+                    <!-- Card 3: Fancoil Manual Control -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-fan"></i> Ručna Kontrola Fancoil-a</h5>
+                        <div class="grid">
+                            <label for="hvac-fc-301"><input type="checkbox" id="hvac-fc-301" role="switch" onchange="setHvacFancoil(1, this.checked)"> Fancoil 301</label>
+                            <label for="hvac-fc-302"><input type="checkbox" id="hvac-fc-302" role="switch" onchange="setHvacFancoil(2, this.checked)"> Fancoil 302</label>
+                        </div>
+                        <div class="grid">
+                            <label for="hvac-fc-303"><input type="checkbox" id="hvac-fc-303" role="switch" onchange="setHvacFancoil(3, this.checked)"> Fancoil 303</label>
+                            <label for="hvac-fc-fitnes"><input type="checkbox" id="hvac-fc-fitnes" role="switch" onchange="setHvacFancoil(4, this.checked)"> Fancoil Fitnes</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Card 4: Vanjska Rasvjeta -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-lightbulb"></i> Vanjska Rasvjeta</h5>
+                        <div class="grid">
+                            <div>
+                                <small><strong>Logičko stanje releja:</strong> <span id="hvac-light-relay-status" class="info-badge">...</span></small>
+                            </div>
+                            <div>
+                                <small><strong>Stvarno stanje (ulaz):</strong> <span id="hvac-light-input-status" class="info-badge">...</span></small>
+                            </div>
+                        </div>
+                        <hr>
+                        <h6>Timer Kontrola</h6>
+                        <div class="grid">
+                            <input type="text" id="hvac-timer-on" placeholder="SUNSET / 2030 / OFF">
+                            <input type="text" id="hvac-timer-off" placeholder="SUNRISE / 0630 / OFF">
+                            <button class="outline" onclick="setHvacTimer()">💾 Postavi Timer</button>
+                        </div>
+                        <hr>
+                        <h6>Ručna Kontrola</h6>
+                        <button class="outline" onclick="sendHvacCmd('OUTDOOR_LIGHT_ON')">💡 Svjetlo ON</button>
+                        <button class="outline secondary" onclick="sendHvacCmd('OUTDOOR_LIGHT_OFF')">🌙 Svjetlo OFF</button>
+                    </div>
+
+                    <!-- Card 4: Other Relays -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-box"></i> Ostali Releji</h5>
+                        <div class="grid">
+                            <label for="hvac-relay-k2"><input type="checkbox" id="hvac-relay-k2" role="switch" onchange="setHvacRelay('K2', this.checked)"> Relej K2 (Rezerva)</label>
+                            <label for="hvac-relay-k3"><input type="checkbox" id="hvac-relay-k3" role="switch" onchange="setHvacRelay('K3', this.checked)"> Relej K3 (Rezerva)</label>
+                        </div>
+                    </div>
+
+                    <!-- Card 5: Diagnostics -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-activity"></i> Dijagnostika</h5>
+                        <div id="hvac-diagnostics" class="log-box" style="height: 250px;">Učitavam dijagnostiku...</div>
+                    </div>
+
+                    <!-- Card 6: Firmware Management -->
+                    <h4 style="margin-top: 1.5rem; border-bottom: 2px solid var(--pico-primary); padding-bottom: 0.5rem;">
+                        <i class="bi bi-download"></i> Firmware Management
+                    </h4>
+
+                    <!-- Verzija HVAC Firmware -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-info-circle"></i> HVAC Kontroler Firmware Verzija</h5>
+                        <div class="grid">
+                            <div>
+                                <small><strong>Verzija:</strong> <span id="hvac-fw-version" class="info-badge">...</span></small><br>
+                                <small><strong>Build Number:</strong> <span id="hvac-fw-build" class="info-badge">...</span></small><br>
+                                <small><strong>Build Date:</strong> <span id="hvac-fw-date" class="info-badge">...</span></small>
+                            </div>
+                            <div>
+                                <button class="outline" onclick="checkHvacVersion()">🔄 Provjeri Verziju</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- OTA Update HVAC -->
+                    <div class="control-card">
+                        <h5><i class="bi bi-cloud-upload"></i> OTA Update HVAC Firmware</h5>
+                        <p>Upload novog firmware-a direktno na HVAC kontroler. Uređaj će se automatski restartovati nakon uspješnog update-a.</p>
+                        <label for="hvac-fw-file">Odaberi Firmware Fajl (.bin)
+                            <input type="file" id="hvac-fw-file" accept=".bin">
+                        </label>
+                        <button class="outline" onclick="uploadHvacFirmware()">📤 Upload &amp; Update HVAC Firmware</button>
+                        <div id="hvac-upload-progress" style="display: none; margin-top: 1rem;">
+                            <progress id="hvac-progress-bar" max="100" value="0"></progress>
+                            <p><span id="hvac-upload-status">Uploading...</span> <span id="hvac-upload-percent">0%</span></p>
+                        </div>
+                        <small style="color: var(--pico-muted-color); display: block; margin-top: 0.75rem;">
+                            ⚠️ VAŽNO: Ne prekidajte napajanje tokom update-a!<br>
+                            * HVAC kontroler će se automatski restartovati nakon update-a<br>
+                            * Update traje 30-60 sekundi
+                        </small>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div id="loading-overlay" style="display:none; text-align:center; padding: 2rem;">
+                <span aria-busy="true">Molimo sačekajte...</span>
+            </div>
+        </main>
+    </div>
+
+    <!-- TOAST NOTIFICATIONS -->
+    <div id="toast-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;"></div>
+
+    <script>
+        let currentRoom = null;
+
+        // --- TABS LOGIC ---
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+                
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab).classList.add('active');
+                
+                // Auto-load data for the tab
+                if (btn.dataset.tab === 'tab-esp') loadTabESP();
+                if (btn.dataset.tab === 'tab-pin1') loadTabPIN(currentRoom.pin_id, 'pin1');
+                if (btn.dataset.tab === 'tab-pin2') loadTabPIN(currentRoom.sec_pin_id, 'pin2');
+                if (btn.dataset.tab === 'tab-th') loadTabTH();
+                if (btn.dataset.tab === 'tab-scene') loadTabScene();
+            });
+        });
+
+        // --- FUNKCIJA ZA AŽURIRANJE STATUSA SOBA ---
+        async function updateRoomStatuses() {
+            const roomLinks = document.querySelectorAll('.room-link');
+            for (const link of roomLinks) {
+                const mdns = link.dataset.mdns;
+                const statusDot = link.querySelector('.status-indicator');
+                
+                try {
+                    const res = await fetch('/api/admin/proxy', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ 
+                            soba_id: link.dataset.id, 
+                            params: { CMD: 'GET_STATUS' } 
+                        })
+                    });
+                    const json = await res.json();
+                    
+                    // Ukloni prethodne statusne klase
+                    link.classList.remove('online-room', 'offline-room', 'unknown-room');
+                    if (statusDot) {
+                        statusDot.classList.remove('status-online', 'status-offline');
+                    }
+                    
+                    if (json.success && json.data) {
+                        link.classList.add('online-room');
+                        if (statusDot) statusDot.classList.add('status-online');
+                    } else {
+                        link.classList.add('offline-room');
+                        if (statusDot) statusDot.classList.add('status-offline');
+                    }
+                } catch (e) {
+                    link.classList.remove('online-room', 'offline-room', 'unknown-room');
+                    link.classList.add('offline-room');
+                    if (statusDot) {
+                        statusDot.classList.remove('status-online', 'status-offline');
+                        statusDot.classList.add('status-offline');
+                    }
+                }
+            }
+        }
+        
+        // Ažuriraj statuse soba na učitavanje stranice
+        window.addEventListener('load', () => {
+            updateRoomStatuses();
+            // Ažuriraj statuse svakih 30 sekundi
+            setInterval(updateRoomStatuses, 30000);
+        });
+        
+        // --- ROOM SELECTION ---
+        document.querySelectorAll('.room-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelectorAll('.room-link').forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+                
+                currentRoom = {
+                    id: link.dataset.id,
+                    mdns: link.dataset.mdns,
+                    pin_id: link.dataset.pinId,
+                    sec_pin_id: link.dataset.secPinId,
+                    th_id: link.dataset.thId,
+                    scene_id: link.dataset.sceneId
+                };
+
+                document.getElementById('welcome-screen').style.display = 'none';
+                document.getElementById('dashboard-header').style.display = 'block';
+                document.getElementById('current-room-title').textContent = `Soba ${link.dataset.name}`;
+                
+                // --- DINAMIČKO PRIKAZIVANJE TABOVA ---
+                const showTab = (buttonId, display) => {
+                    const button = document.getElementById(buttonId);
+                    if (button) {
+                        button.style.display = display ? 'block' : 'none';
+                    }
+                };
+
+                if (currentRoom.id === 'hvac') {
+                    // HVAC Kontroler je odabran
+                    showTab('btn-tab-esp', false);
+                    showTab('btn-tab-pin1', false);
+                    showTab('btn-tab-pin2', false);
+                    showTab('btn-tab-th', false);
+                    showTab('btn-tab-scene', false);
+                    showTab('btn-tab-hvac', true);
+                    document.querySelector('.tab-btn[data-tab="tab-hvac"]').click();
+                } else {
+                    // Standardni uređaj (soba ili Fitnes Termostat)
+                    showTab('btn-tab-esp', true);
+                    showTab('btn-tab-pin1', currentRoom.pin_id && currentRoom.pin_id !== 'N/A');
+                    showTab('btn-tab-pin2', currentRoom.sec_pin_id && currentRoom.sec_pin_id !== 'N/A');
+                    showTab('btn-tab-th', currentRoom.th_id && currentRoom.th_id !== 'N/A');
+                    showTab('btn-tab-scene', currentRoom.scene_id && currentRoom.scene_id !== 'N/A');
+                    showTab('btn-tab-hvac', false);
+                    document.querySelector('.tab-btn[data-tab="tab-esp"]').click();
+                }
+            });
+        });
+
+        // --- CONFIG EDITOR FUNCTIONS ---
+        async function loadConfig() {
+            try {
+                const res = await fetch('/api/admin/config');
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('config-editor').value = JSON.stringify(data.config, null, 2);
+                    document.getElementById('config-editor-container').style.display = 'block';
+                    showToast('Config učitan', 'success');
+                } else {
+                    showToast('Greška: ' + data.message, 'error');
+                }
+            } catch (err) {
+                showToast('Greška pri učitavanju config-a: ' + err.message, 'error');
+            }
+        }
+
+        async function saveConfig() {
+            const editor = document.getElementById('config-editor');
+            try {
+                const config = JSON.parse(editor.value);
+                const res = await fetch('/api/admin/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ config: config })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => {
+                        showToast('Osvježavam stranicu za reload config-a...', 'info');
+                        setTimeout(() => location.reload(), 1500);
+                    }, 1000);
+                } else {
+                    showToast('Greška: ' + data.message, 'error');
+                }
+            } catch (err) {
+                showToast('Greška pri parsiranju ili čuvanju: ' + err.message, 'error');
+            }
+        }
+
+        function validateConfigJSON() {
+            const editor = document.getElementById('config-editor');
+            const msgDiv = document.getElementById('config-validation-msg');
+            try {
+                JSON.parse(editor.value);
+                msgDiv.innerHTML = '<p style="color: green;"><i class="bi bi-check-circle"></i> ✅ JSON je validan!</p>';
+            } catch (err) {
+                msgDiv.innerHTML = `<p style="color: red;"><i class="bi bi-x-circle"></i> ❌ JSON greška: ${err.message}</p>`;
+            }
+        }
+
+        function hideConfigEditor() {
+            document.getElementById('config-editor-container').style.display = 'none';
+            document.getElementById('config-validation-msg').innerHTML = '';
+        }
+
+        function downloadConfig() {
+            window.location.href = '/api/admin/config/download';
+            showToast('Download config.json pokrenut', 'success');
+        }
+
+        async function restartServerService() {
+            const confirmed = confirm('Restartovati server servis?\n\nAktivne konekcije ce biti privremeno prekinute.');
+            if (!confirmed) return;
+
+            try {
+                const res = await fetch('/api/admin/restart', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message || 'Restart zakazan', 'success');
+                } else {
+                    showToast('Greška: ' + (data.message || 'Restart nije uspio'), 'error');
+                }
+            } catch (err) {
+                showToast('Greška pri restartu: ' + err.message, 'error');
+            }
+        }
+
+        async function uploadConfig(input) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            
+            if (!file.name.endsWith('.json')) {
+                showToast('Molimo uploadujte .json fajl', 'error');
+                return;
+            }
+
+            try {
+                const text = await file.text();
+                const config = JSON.parse(text);
+                
+                const confirmed = confirm('Jeste li sigurni da želite zamijeniti trenutni config.json?\n\nBackup će biti automatski kreiran.');
+                if (!confirmed) {
+                    input.value = '';
+                    return;
+                }
+
+                const res = await fetch('/api/admin/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ config: config })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => {
+                        showToast('Osvježavam stranicu...', 'info');
+                        setTimeout(() => location.reload(), 1500);
+                    }, 1000);
+                } else {
+                    showToast('Greška: ' + data.message, 'error');
+                }
+            } catch (err) {
+                showToast('Greška pri upload-u: ' + err.message, 'error');
+            } finally {
+                input.value = '';
+            }
+        }
+
+        // --- PIN LENGTH MANAGEMENT ---
+        function updatePin1InputMaxLength() {
+            const type = document.getElementById('sel-pin1-type').value;
+            const input = document.getElementById('inp-pin1-val');
+            if (type === 'SERVICE') {
+                input.maxLength = 5;
+                input.placeholder = 'Lozinka (5 cifara)';
+            } else {
+                input.maxLength = 4;
+                input.placeholder = 'Lozinka (4 cifre)';
+            }
+            input.value = ''; // Clear when switching
+        }
+
+        function updatePin2InputMaxLength() {
+            const type = document.getElementById('sel-pin2-type').value;
+            const input = document.getElementById('inp-pin2-val');
+            if (type === 'SERVICE') {
+                input.maxLength = 5;
+                input.placeholder = 'Lozinka (5 cifara)';
+            } else {
+                input.maxLength = 4;
+                input.placeholder = 'Lozinka (4 cifre)';
+            }
+            input.value = ''; // Clear when switching
+        }
+
+        // --- API COMMUNICATION ---
+        async function sendProxy(params) {
+            if (!currentRoom) return;
+            try {
+                const res = await fetch('/api/admin/proxy', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ soba_id: currentRoom.id, params: params })
+                });
+                const json = await res.json();
+                return json;
+            } catch (e) {
+                console.error(e);
+                showToast("Greška u komunikaciji!", "error");
+                return null;
+            }
+        }
+
+        async function sendCmd(cmd, extraParams = {}) {
+            showToast(`Šaljem ${cmd}...`);
+            const params = { CMD: cmd, ...extraParams };
+            const res = await sendProxy(params);
+            if (res && res.success) {
+                showToast("Uspješno!", "success");
+                return res.data;
+            } else {
+                showToast(res?.message || "Greška!", "error");
+                return null;
+            }
+        }
+        
+        async function sendCtrlCmd(ctrlId, cmd, extraParams = {}) {
+             if (!ctrlId || ctrlId === 'N/A') {
+                 showToast("Kontroler nije definisan!", "error");
+                 return;
+             }
+             return sendCmd(cmd, { ID: ctrlId, ...extraParams });
+        }
+
+        // --- TAB 1: ESP LOAD ---
+        async function loadTabESP() {
+            const data = await sendCmd('GET_STATUS');
+            if (!data) return;
+            
+            const d = data.data; // Raw data from ESP
+            
+            // WiFi podaci - BEZ MASKIRANJA
+            if (d.wifi) {
+                document.getElementById('esp-ssid').textContent = d.wifi.ssid || 'N/A';
+                document.getElementById('esp-password').textContent = d.wifi.password || 'N/A';
+                document.getElementById('esp-ip').textContent = d.wifi.ip || 'N/A';
+                document.getElementById('esp-mdns').textContent = d.wifi.mdns || 'N/A';
+                document.getElementById('esp-port').textContent = d.wifi.port || 'N/A';
+                document.getElementById('esp-rssi').textContent = (d.wifi.rssi !== undefined && d.wifi.rssi !== null) ? d.wifi.rssi : 'N/A';
+                
+                // Popuni input polja
+                document.getElementById('inp-ssid').value = d.wifi.ssid || '';
+                document.getElementById('inp-pass').value = d.wifi.password || '';
+                document.getElementById('inp-mdns').value = d.wifi.mdns || '';
+                document.getElementById('inp-port').value = d.wifi.port || '';
+            }
+            
+            // Vrijeme i zona
+            if (d.time) {
+                document.getElementById('esp-time').textContent = d.time.utc || 'N/A';
+                document.getElementById('esp-timezone').textContent = d.time.timezone_offset_minutes || '0';
+                document.getElementById('esp-dst').textContent = d.time.dst_active ? 'DA' : 'NE';
+            }
+            
+            // Sunce
+            if (d.sun) {
+                document.getElementById('esp-sunrise').textContent = d.sun.sunrise || 'N/A';
+                document.getElementById('esp-sunset').textContent = d.sun.sunset || 'N/A';
+            }
+            
+            // Rasvjeta
+            if (d.light) {
+                document.getElementById('esp-light-relay').textContent = d.light.relay_state || 'N/A';
+                document.getElementById('esp-light-mode').textContent = d.light.control_mode || 'N/A';
+                document.getElementById('esp-timer-on-type').textContent = d.light.timer_on_type || 'N/A';
+                document.getElementById('esp-timer-off-type').textContent = d.light.timer_off_type || 'N/A';
+                document.getElementById('esp-on-time').textContent = d.light.on_time || 'N/A';
+                document.getElementById('esp-off-time').textContent = d.light.off_time || 'N/A';
+                
+                // Popuni i input polja za timer
+                document.getElementById('inp-timer-on').value = d.light.on_time || '';
+                document.getElementById('inp-timer-off').value = d.light.off_time || '';
+            }
+            
+            // Termostat
+            if (d.thermostat) {
+                const th = d.thermostat;
+                document.getElementById('esp-th-temp').textContent = th.temperature !== undefined ? th.temperature : 'N/A';
+                document.getElementById('esp-th-setpoint').textContent = th.setpoint !== undefined ? th.setpoint : 'N/A';
+                document.getElementById('esp-th-threshold').textContent = th.threshold !== undefined ? th.threshold : 'N/A';
+                document.getElementById('esp-th-mode').textContent = th.mode || 'N/A';
+                document.getElementById('esp-th-valve').textContent = th.valve || 'N/A';
+                document.getElementById('esp-th-fan').textContent = th.fan || 'N/A';
+                document.getElementById('esp-ema-alpha').textContent = th.ema_alpha !== undefined ? th.ema_alpha : 'N/A';
+                document.getElementById('esp-fluid-temp').textContent = th.fluid_temp !== undefined ? th.fluid_temp : 'N/A';
+                document.getElementById('esp-fluid-avail').textContent = th.fluid_available ? 'DA' : 'NE';
+                const floorEl = document.getElementById('esp-th-floor-mode');
+                if (th.fancoil_floor_mode !== undefined) {
+                    floorEl.textContent = th.fancoil_floor_mode ? 'AKTIVAN' : 'Neaktivan';
+                    floorEl.className = th.fancoil_floor_mode ? 'info-badge warning' : 'info-badge';
+                }
+                
+                // Popuni input polja za ESP termostat
+                if (th.setpoint) document.getElementById('inp-esp-th-setpoint').value = th.setpoint;
+                if (th.threshold) document.getElementById('inp-esp-th-diff').value = Math.round(th.threshold * 10);
+                if (th.ema_alpha) document.getElementById('inp-esp-th-ema').value = Math.round(th.ema_alpha * 10);
+            }
+            
+            // SOS Status
+            if (d.sos) {
+                const sosActive = d.sos.active;
+                const sosEl = document.getElementById('esp-sos-active');
+                sosEl.textContent = sosActive ? 'AKTIVAN' : 'Neaktivan';
+                sosEl.className = sosActive ? 'info-badge danger' : 'info-badge success';
+                
+                // Prikaži RESET dugme samo ako je SOS aktivan
+                document.getElementById('sos-controls').style.display = sosActive ? 'block' : 'none';
+            }
+            
+            // Watchdog
+            document.getElementById('esp-watchdog').textContent = d.ping_watchdog ? 'Uključen' : 'Isključen';
+            
+            // IR
+            if (d.ir) {
+                const protocolId = d.ir.protocol_id;
+                const protocolName = d.ir.protocol_name;
+                if (protocolId !== undefined && protocolName) {
+                    document.getElementById('esp-ir-protocol').textContent = `${protocolName} (${protocolId})`;
+                } else if (protocolName) {
+                    document.getElementById('esp-ir-protocol').textContent = protocolName;
+                } else if (protocolId !== undefined) {
+                    document.getElementById('esp-ir-protocol').textContent = `ID ${protocolId}`;
+                } else {
+                    document.getElementById('esp-ir-protocol').textContent = 'N/A';
+                }
+
+                if (protocolId !== undefined) {
+                    document.getElementById('inp-ir-protocol').value = protocolId;
+                }
+            } else {
+                document.getElementById('esp-ir-protocol').textContent = 'N/A';
+            }
+            
+            // Ažuriraj globalni status
+            const statusEl = document.getElementById('global-status-text');
+            statusEl.textContent = 'Online';
+            statusEl.className = 'info-badge success';
+            
+            // Učitaj ESP firmware verziju
+            checkESPVersion();
+            
+            // Učitaj dostupne GPIO pinove
+            loadAvailablePins();
+        }
+        
+        // --- LOAD AVAILABLE GPIO PINS ---
+        async function loadAvailablePins() {
+            const pinSelect = document.getElementById('sel-esp-pin');
+            pinSelect.innerHTML = '<option value="">Učitavam pinove...</option>';
+            
+            const data = await sendCmd('ESP_GET_PINS');
+            if (!data || !data.data || !data.data.pins_status) {
+                pinSelect.innerHTML = '<option value="">Greška - pinovi nedostupni</option>';
+                showToast('Greška pri učitavanju GPIO pinova', 'error');
+                return;
+            }
+            
+            // Parse pins_status string: "GPIO12=LOW\nGPIO15=HIGH\nGPIO34=LOW\n..."
+            const pinsStatus = data.data.pins_status;
+            const pinLines = pinsStatus.split('\n').filter(line => line.trim());
+            const availablePins = [];
+            
+            for (const line of pinLines) {
+                // Extract GPIO number from "GPIO12=LOW" format
+                const match = line.match(/GPIO(\d+)=/);
+                if (match) {
+                    availablePins.push(parseInt(match[1]));
+                }
+            }
+            
+            if (availablePins.length === 0) {
+                pinSelect.innerHTML = '<option value="">Nema dostupnih pinova</option>';
+                return;
+            }
+            
+            // Sort pins numerically
+            availablePins.sort((a, b) => a - b);
+            
+            // Populate dropdown with available pins
+            pinSelect.innerHTML = '';
+            const inputOnlyPins = [34, 35, 36, 39]; // Input-only pins
+            
+            for (const pinNum of availablePins) {
+                const option = document.createElement('option');
+                option.value = pinNum;
+                option.textContent = `GPIO ${pinNum}`;
+                
+                if (inputOnlyPins.includes(pinNum)) {
+                    option.textContent += ' (Input Only)';
+                    option.style.color = '#999';
+                }
+                
+                pinSelect.appendChild(option);
+            }
+            
+            showToast(`Učitano ${availablePins.length} dostupnih GPIO pinova`, 'success');
+        }
+        
+        function setWifi() {
+            const ssid = document.getElementById('inp-ssid').value;
+            const pass = document.getElementById('inp-pass').value;
+            if(!ssid) return showToast("SSID obavezan!", "error");
+            const params = { SSID: ssid };
+            if (pass) params.PSWRD = pass;
+            sendCmd('SET_SSID_PSWRD', params);
+        }
+        
+        function setMDNS() {
+            const mdns = document.getElementById('inp-mdns').value;
+            if(!mdns) return showToast("mDNS ime obavezno!", "error");
+            sendCmd('SET_MDNS_NAME', { MDNS: mdns });
+        }
+        
+        function setPort() {
+            const port = document.getElementById('inp-port').value;
+            if(!port || port < 1 || port > 65535) return showToast("Port mora biti 1-65535!", "error");
+            sendCmd('SET_TCPIP_PORT', { PORT: port });
+        }
+        
+        function setTime() {
+            const date = document.getElementById('inp-date').value;
+            const time = document.getElementById('inp-time').value;
+            if(!date || !time) return showToast("Datum i vrijeme su obavezni!", "error");
+            if(date.length !== 6 || time.length !== 6) return showToast("Format: Datum DDMMYY, Vrijeme HHMMSS", "error");
+            sendCmd('SET_TIME', { DATE: date, TIME: time });
+        }
+        
+        function setTimer() {
+            const ton = document.getElementById('inp-timer-on').value;
+            const toff = document.getElementById('inp-timer-off').value;
+            if(!ton || !toff) return showToast("Timer ON i OFF su obavezni!", "error");
+            sendCmd('SET_TIMER', { TIMERON: ton, TIMEROFF: toff });
+        }
+        
+        function setESPThSetpoint() {
+            const val = document.getElementById('inp-esp-th-setpoint').value;
+            if(!val || val < 5 || val > 40) return showToast("Setpoint mora biti 5-40°C!", "error");
+            sendCmd('TH_SETPOINT', { VALUE: val });
+        }
+        
+        function setESPThDiff() {
+            const val = document.getElementById('inp-esp-th-diff').value;
+            if(!val || val < 1 || val > 50) return showToast("Diferenca mora biti 1-50!", "error");
+            sendCmd('TH_DIFF', { VALUE: val });
+        }
+        
+        function setESPThEMA() {
+            const val = document.getElementById('inp-esp-th-ema').value;
+            if(!val || val < 1 || val > 10) return showToast("EMA alpha mora biti 1-10!", "error");
+            sendCmd('TH_EMA', { VALUE: val });
+        }
+
+        async function setIRProtocol() {
+            const protocolId = document.getElementById('inp-ir-protocol').value;
+            if (!protocolId || protocolId < 1 || protocolId > 128) {
+                return showToast('IR Protocol ID mora biti 1-128!', 'error');
+            }
+
+            const result = await sendCmd('SET_IR_PROTOCOL', { VALUE: protocolId });
+            if (result) {
+                loadTabESP();
+            }
+        }
+
+        async function sendIRCommand() {
+            const mode = document.getElementById('inp-ir-mode').value;
+            const temperature = document.getElementById('inp-ir-temp').value;
+
+            if (mode === 'OFF') {
+                await sendCmd('SET_IR', { MOD: 'OFF' });
+                return;
+            }
+
+            if (!temperature || temperature < 5 || temperature > 40) {
+                return showToast('Temperatura mora biti 5-40°C za HEATING/COOLING!', 'error');
+            }
+
+            await sendCmd('SET_IR', { MOD: mode, VALUE: temperature });
+        }
+        
+        function ctrlEspPin(cmd) {
+            const pin = document.getElementById('sel-esp-pin').value;
+            if (!pin) {
+                showToast('Molimo odaberite GPIO pin!', 'error');
+                return;
+            }
+            
+            // Upozorenje za input-only pinove
+            const inputOnlyPins = [34, 35, 36, 39];
+            if (inputOnlyPins.includes(parseInt(pin)) && (cmd === 'ESP_SET_PIN' || cmd === 'ESP_PULSE_PIN')) {
+                showToast(`⚠️ GPIO${pin} je samo ulazni pin - ne može se postaviti na HIGH!`, 'error');
+                return;
+            }
+            
+            let params = { PIN: pin };
+            if (cmd === 'ESP_PULSE_PIN') {
+                const pause = document.getElementById('inp-esp-pulse').value || '2';
+                params.PAUSE = pause;
+            }
+            sendCmd(cmd, params);
+        }
+
+        // --- FIRMWARE MANAGEMENT FUNCTIONS ---
+        async function checkESPVersion() {
+            const data = await sendCmd('GET_VERSION');
+            if (data && data.data) {
+                const d = data.data;
+                document.getElementById('esp-fw-version').textContent = d.firmware_version || 'N/A';
+                document.getElementById('esp-fw-build').textContent = d.build_number || 'N/A';
+                document.getElementById('esp-fw-date').textContent = d.build_date || 'N/A';
+            }
+        }
+
+        async function uploadESPFirmware() {
+            const fileInput = document.getElementById('esp-fw-file');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showToast("Molimo odaberite firmware fajl!", "error");
+                return;
+            }
+
+            const file = fileInput.files[0];
+            if (!file.name.endsWith('.bin')) {
+                showToast("Fajl mora biti .bin format!", "error");
+                return;
+            }
+
+            if (!confirm(`Da li ste sigurni da želite update ESP32 firmware?\n\nFajl: ${file.name}\nVeličina: ${(file.size / 1024).toFixed(2)} KB\n\n⚠️ Uređaj će se restartovati nakon update-a!`)) {
+                return;
+            }
+
+            const progressDiv = document.getElementById('esp-upload-progress');
+            const progressBar = document.getElementById('esp-progress-bar');
+            const statusText = document.getElementById('esp-upload-status');
+            const percentText = document.getElementById('esp-upload-percent');
+
+            progressDiv.style.display = 'block';
+            progressBar.value = 0;
+            statusText.textContent = 'Uploading...';
+            percentText.textContent = '0%';
+
+            const formData = new FormData();
+            formData.append('firmware', file);
+            formData.append('mdns', currentRoom.mdns);
+
+            try {
+                const xhr = new XMLHttpRequest();
+                
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        progressBar.value = percent;
+                        percentText.textContent = percent + '%';
+                    }
+                });
+
+                xhr.addEventListener('load', () => {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.success) {
+                            statusText.textContent = 'Update uspješan! Uređaj se restartuje...';
+                            showToast("Firmware update uspješan! ESP32 se restartuje...", "success");
+                            setTimeout(() => {
+                                progressDiv.style.display = 'none';
+                                showToast("Molimo sačekajte 10-15 sekundi prije nego osvježite stranicu.", "warning");
+                            }, 3000);
+                        } else {
+                            statusText.textContent = 'Update neuspješan!';
+                            showToast("Greška: " + response.message, "error");
+                        }
+                    } catch (e) {
+                        statusText.textContent = 'Update neuspješan!';
+                        showToast("Greška u parsiranju odgovora!", "error");
+                    }
+                });
+
+                xhr.addEventListener('error', () => {
+                    statusText.textContent = 'Upload greška!';
+                    showToast("Greška u komunikaciji tokom upload-a!", "error");
+                });
+
+                xhr.addEventListener('timeout', () => {
+                    statusText.textContent = 'Timeout - ali upload možda uspješan!';
+                    showToast("Timeout tokom upload-a. Provjerite status ESP32.", "warning");
+                });
+
+                // Koristi Flask proxy endpoint
+                xhr.open('POST', '/api/admin/esp_ota_update');
+                xhr.timeout = 120000; // 2 minuta timeout
+                xhr.send(formData);
+
+            } catch (e) {
+                console.error(e);
+                showToast("Greška: " + e.message, "error");
+                progressDiv.style.display = 'none';
+            }
+        }
+
+        // --- HVAC FIRMWARE MANAGEMENT FUNCTIONS ---
+        async function checkHvacVersion() {
+            const data = await sendCmd('GET_VERSION');
+            if (data && data.data) {
+                const d = data.data;
+                document.getElementById('hvac-fw-version').textContent = d.firmware_version || 'N/A';
+                document.getElementById('hvac-fw-build').textContent = d.build_number || 'N/A';
+                document.getElementById('hvac-fw-date').textContent = d.build_date || 'N/A';
+            }
+        }
+
+        async function uploadHvacFirmware() {
+            const fileInput = document.getElementById('hvac-fw-file');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showToast("Molimo odaberite firmware fajl!", "error");
+                return;
+            }
+
+            const file = fileInput.files[0];
+            if (!file.name.endsWith('.bin')) {
+                showToast("Fajl mora biti .bin format!", "error");
+                return;
+            }
+
+            if (!confirm(`Da li ste sigurni da želite update HVAC kontroler firmware?\n\nFajl: ${file.name}\nVeličina: ${(file.size / 1024).toFixed(2)} KB\n\n⚠️ Uređaj će se restartovati nakon update-a!`)) {
+                return;
+            }
+
+            const progressDiv = document.getElementById('hvac-upload-progress');
+            const progressBar = document.getElementById('hvac-progress-bar');
+            const statusText = document.getElementById('hvac-upload-status');
+            const percentText = document.getElementById('hvac-upload-percent');
+
+            progressDiv.style.display = 'block';
+            progressBar.value = 0;
+            statusText.textContent = 'Uploading...';
+            percentText.textContent = '0%';
+
+            const formData = new FormData();
+            formData.append('firmware', file);
+
+            try {
+                const xhr = new XMLHttpRequest();
+
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        progressBar.value = percent;
+                        percentText.textContent = percent + '%';
+                    }
+                });
+
+                xhr.addEventListener('load', () => {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.success) {
+                            statusText.textContent = 'Update uspješan! Uređaj se restartuje...';
+                            showToast("Firmware update uspješan! HVAC kontroler se restartuje...", "success");
+                            setTimeout(() => {
+                                progressDiv.style.display = 'none';
+                                showToast("Molimo sačekajte 10-15 sekundi prije nego osvježite stranicu.", "warning");
+                            }, 3000);
+                        } else {
+                            statusText.textContent = 'Update neuspješan!';
+                            showToast("Greška: " + response.message, "error");
+                        }
+                    } catch (e) {
+                        statusText.textContent = 'Update neuspješan!';
+                        showToast("Greška u parsiranju odgovora!", "error");
+                    }
+                });
+
+                xhr.addEventListener('error', () => {
+                    statusText.textContent = 'Upload greška!';
+                    showToast("Greška u komunikaciji tokom upload-a!", "error");
+                });
+
+                xhr.addEventListener('timeout', () => {
+                    statusText.textContent = 'Timeout - ali upload možda uspješan!';
+                    showToast("Timeout tokom upload-a. Provjerite status HVAC kontrolera.", "warning");
+                });
+
+                xhr.open('POST', '/api/admin/hvac_ota_update');
+                xhr.timeout = 120000; // 2 minuta timeout
+                xhr.send(formData);
+
+            } catch (e) {
+                console.error(e);
+                showToast("Greška: " + e.message, "error");
+                progressDiv.style.display = 'none';
+            }
+        }
+
+        async function getSTMVersion() {
+            const id = document.getElementById('inp-stm-id').value;
+            if (!id || id < 1 || id > 254) {
+                showToast("ID mora biti između 1 i 254!", "error");
+                return;
+            }
+
+            const data = await sendCmd('GET_VERSION', { ID: id });
+            if (data && data.data) {
+                const d = data.data;
+                const infoDiv = document.getElementById('stm-version-info');
+                infoDiv.style.display = 'block';
+
+                // Funkcija za formatiranje verzije
+                const formatVersion = (hexStr) => {
+                    if (!hexStr || hexStr === 'null' || hexStr === '0x00000000') return 'Not Programmed';
+                    const hex = parseInt(hexStr, 16);
+                    const type = (hex >> 24) & 0xFF;
+                    const date = hex & 0xFFFFFF;
+                    const yy = (date >> 16) & 0xFF;
+                    const mm = (date >> 8) & 0xFF;
+                    const dd = date & 0xFF;
+                    const typeStr = type === 0x31 ? 'Bootloader' : type === 0x32 ? 'Application' : 'Unknown';
+                    return `${typeStr} (20${yy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')})`;
+                };
+
+                document.getElementById('stm-bootloader').textContent = formatVersion(d.bootloader_version);
+                document.getElementById('stm-application').textContent = formatVersion(d.application_version);
+                document.getElementById('stm-backup-boot').textContent = formatVersion(d.bootloader_backup_version);
+                document.getElementById('stm-backup-app').textContent = formatVersion(d.application_backup_version);
+                document.getElementById('stm-new-file').textContent = formatVersion(d.new_file_version);
+
+                document.getElementById('stm-bootloader').className = d.bootloader_version && d.bootloader_version !== '0x00000000' ? 'info-badge success' : 'info-badge';
+                document.getElementById('stm-application').className = d.application_version && d.application_version !== '0x00000000' ? 'info-badge success' : 'info-badge';
+            }
+        }
+
+        // --- TAB 2 & 3: PIN LOAD ---
+        async function loadTabPIN(ctrlId, prefix) {
+            if (!ctrlId || ctrlId === 'N/A') return;
+            
+            // 1. GET_VERSION - Firmware verzija
+            sendCtrlCmd(ctrlId, 'GET_VERSION').then(r => {
+                if (r && r.data) {
+                    const d = r.data;
+                    let info = '';
+                    if (d.bootloader_version) info += `BL: ${d.bootloader_version}<br>`;
+                    if (d.application_version) info += `App: ${d.application_version}<br>`;
+                    if (d.bootloader_backup_version) info += `BL Backup: ${d.bootloader_backup_version}<br>`;
+                    if (d.application_backup_version) info += `App Backup: ${d.application_backup_version}<br>`;
+                    if (d.new_file_version) info += `New File: ${d.new_file_version}`;
+                    document.getElementById(`${prefix}-fw-version`).innerHTML = info || 'N/A';
+                } else {
+                    document.getElementById(`${prefix}-fw-version`).textContent = 'N/A';
+                }
+            });
+            
+            // 2. GET_SYSID - System ID
+            sendCtrlCmd(ctrlId, 'GET_SYSID').then(r => {
+                if (r && r.data && r.data.system_id_hex) {
+                    document.getElementById(`${prefix}-sysid`).textContent = 
+                        `${r.data.system_id_hex} (Dec: ${r.data.system_id})`;
+                } else {
+                    document.getElementById(`${prefix}-sysid`).textContent = 'N/A';
+                }
+            });
+            
+            // 3. GET_PASSWORD - Guest password (ID=1)
+            sendCtrlCmd(ctrlId, 'GET_PASSWORD', { TYPE: 'GUEST', GUEST_ID: '1' }).then(r => {
+                if (r && r.data && r.data.password !== undefined) {
+                    const pwd = r.data.password;
+                    const expiry = r.data.expiry || 'N/A';
+                    const userType = r.data.user_type || 'guest';
+                    document.getElementById(`${prefix}-guest-password`).textContent = 
+                        `${pwd} (Istice: ${expiry}, Type: ${userType})`;
+                } else {
+                    document.getElementById(`${prefix}-guest-password`).textContent = 'Nije postavljen';
+                }
+            });
+            
+            // 4. Load Slot Status
+            loadPinSlotStatus(prefix);
+        }
+        
+        function loadPinSlotStatus(prefix) {
+            console.log(`[PIN] Loading slot status for ${prefix}...`);
+            const slotMapping = { 'pin1': [0, 4], 'pin2': [3, 7] };
+            const [fwSlot, extSlot] = slotMapping[prefix] || [0, 4];
+            console.log(`[PIN] Fetching slots via proxy for soba ${currentRoom.id}`);
+            
+            fetch(`/api/admin/esp_proxy/${currentRoom.id}/slots`)
+                .then(res => res.json())
+                .then(data => {
+                    console.log(`[PIN] Received slots data:`, data);
+                    if (data.slots) {
+                        const fw = data.slots.find(s => s.id === fwSlot);
+                        const ext = data.slots.find(s => s.id === extSlot);
+                        console.log(`[PIN] Slot ${fwSlot} (FW):`, fw);
+                        console.log(`[PIN] Slot ${extSlot} (EXT):`, ext);
+                        
+                        if (fw) {
+                            const fwStatus = fw.valid ? 
+                                `✅ ${fw.size} bytes, v${fw.version?.toString(16) || 'N/A'}, CRC: ${fw.crc32}` :
+                                `❌ Invalid or empty`;
+                            document.getElementById(`${prefix}-slot${fwSlot}-status`).textContent = fwStatus;
+                        }
+                        
+                        if (ext) {
+                            const extStatus = ext.valid ?
+                                `✅ ${ext.size} bytes, ${ext.filename || 'binary'}, CRC: ${ext.crc32}` :
+                                `❌ Invalid or empty`;
+                            document.getElementById(`${prefix}-slot${extSlot}-status`).textContent = extStatus;
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error('Slot status error:', err);
+                    document.getElementById(`${prefix}-slot${fwSlot}-status`).textContent = 'Error loading';
+                    document.getElementById(`${prefix}-slot${extSlot}-status`).textContent = 'Error loading';
+                });
+        }
+        
+        async function uploadPinFirmware(slot, fileInputId, prefix) {
+            const fileInput = document.getElementById(fileInputId);
+            if (!fileInput.files || !fileInput.files[0]) {
+                showToast('Molimo izaberite fajl', 'error');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('slot', slot);
+            formData.append('file', file);
+            
+            try {
+                showToast('Upload u toku...', 'info');
+                const response = await fetch(`/api/admin/esp_proxy/${currentRoom.id}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                if (result.status === 'success') {
+                    showToast(`Upload uspješan na slot ${slot}`, 'success');
+                    loadPinSlotStatus(prefix); // Refresh status
+                } else {
+                    showToast('Upload neuspješan: ' + (result.message || 'Unknown error'), 'error');
+                }
+            } catch (err) {
+                showToast('Upload greška: ' + err.message, 'error');
+            }
+        }
+        
+        async function startPinUpdate(prefix) {
+            const slotMapping = { 'pin1': 0, 'pin2': 3 };
+            const slot = slotMapping[prefix];
+            const ctrlId = prefix === 'pin1' ? currentRoom.pin_id : currentRoom.sec_pin_id;
+            
+            // STM32 Application address (from GET_VERSION response structure)
+            const addr = 134217728; // 0x08000000 in decimal
+            
+            try {
+                const response = await fetch(`http://${currentRoom.mdns}.local:${currentRoom.port}/start_update?slot=${slot}&addr=${addr}`);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showToast('Firmware update pokrenut', 'success');
+                    document.getElementById(`${prefix}-update-progress`).style.display = 'block';
+                    trackPinUpdateProgress(prefix);
+                } else {
+                    showToast('Update greška: ' + (result.message || 'Unknown'), 'error');
+                }
+            } catch (err) {
+                showToast('Update greška: ' + err.message, 'error');
+            }
+        }
+        
+        function trackPinUpdateProgress(prefix) {
+            const interval = setInterval(async () => {
+                try {
+                    const response = await fetch(`http://${currentRoom.mdns}.local:${currentRoom.port}/update_status`);
+                    const status = await response.json();
+                    
+                    const progressBar = document.getElementById(`${prefix}-progress-bar`);
+                    const progressText = document.getElementById(`${prefix}-progress-text`);
+                    
+                    progressBar.value = status.progress || 0;
+                    
+                    const stateNames = ['IDLE', 'STARTING', 'ERASING', 'WRITING', 'VERIFYING', 'FINISHED', 'ERROR'];
+                    const stateName = stateNames[status.state] || 'UNKNOWN';
+                    progressText.textContent = `${stateName}: ${status.progress}%`;
+                    
+                    // Stop tracking if finished or error
+                    if (status.state === 5 || status.state === 6) {
+                        clearInterval(interval);
+                        if (status.state === 5) {
+                            showToast('Firmware update završen uspješno!', 'success');
+                        } else {
+                            showToast(`Update greška: ${status.lastError}`, 'error');
+                        }
+                        setTimeout(() => {
+                            document.getElementById(`${prefix}-update-progress`).style.display = 'none';
+                            loadPinSlotStatus(prefix);
+                        }, 3000);
+                    }
+                } catch (err) {
+                    clearInterval(interval);
+                    showToast('Greška pri praćenju progresa: ' + err.message, 'error');
+                }
+            }, 10000); // Check every 10 seconds
+        }
+        
+        // =============== NOVE FUNKCIJE ZA FIRMWARE I EXT.FLASH UPDATE ===============
+        // PIN Controllers (pin1/pin2)
+        async function startPinFirmwareUpdate(prefix, slot) {
+            const ctrlId = prefix === 'pin1' ? currentRoom.pin_id : currentRoom.sec_pin_id;
+            
+            try {
+                const response = await fetch(`/api/admin/esp_proxy/${currentRoom.id}/start_update?slot=${slot}&addr=${ctrlId}`);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showToast(`Firmware update pokrenut na slot ${slot}, kontroler ${ctrlId}`, 'success');
+                    const _pb = document.getElementById(`${prefix}-fw-progress-bar`);
+                    const _pt = document.getElementById(`${prefix}-fw-progress-text`);
+                    if (_pb) _pb.value = 0;
+                    if (_pt) _pt.textContent = 'STARTING: 0%';
+                    document.getElementById(`${prefix}-fw-update-progress`).style.display = 'block';
+                    trackUpdateProgress(prefix, 'fw');
+                } else {
+                    showToast('Update greška: ' + (result.message || 'Unknown'), 'error');
+                }
+            } catch (err) {
+                showToast('Update greška: ' + err.message, 'error');
+            }
+        }
+        
+        async function startPinExtFlashUpdate(prefix, slot) {
+            const ctrlId = prefix === 'pin1' ? currentRoom.pin_id : currentRoom.sec_pin_id;
+            
+            try {
+                const response = await fetch(`/api/admin/esp_proxy/${currentRoom.id}/start_update?slot=${slot}&addr=${ctrlId}`);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showToast(`Ext.Flash update pokrenut na slot ${slot}, kontroler ${ctrlId}`, 'success');
+                    const _pb = document.getElementById(`${prefix}-ext-progress-bar`);
+                    const _pt = document.getElementById(`${prefix}-ext-progress-text`);
+                    if (_pb) _pb.value = 0;
+                    if (_pt) _pt.textContent = 'STARTING: 0%';
+                    document.getElementById(`${prefix}-ext-update-progress`).style.display = 'block';
+                    trackUpdateProgress(prefix, 'ext');
+                } else {
+                    showToast('Update greška: ' + (result.message || 'Unknown'), 'error');
+                }
+            } catch (err) {
+                showToast('Update greška: ' + err.message, 'error');
+            }
+        }
+        
+        // Thermostat
+        async function startThFirmwareUpdate(prefix, slot) {
+            const ctrlId = currentRoom.th_id;
+            
+            try {
+                const response = await fetch(`/api/admin/esp_proxy/${currentRoom.id}/start_update?slot=${slot}&addr=${ctrlId}`);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showToast(`Firmware update pokrenut na slot ${slot}, kontroler ${ctrlId}`, 'success');
+                    const _pb = document.getElementById(`${prefix}-fw-progress-bar`);
+                    const _pt = document.getElementById(`${prefix}-fw-progress-text`);
+                    if (_pb) _pb.value = 0;
+                    if (_pt) _pt.textContent = 'STARTING: 0%';
+                    document.getElementById(`${prefix}-fw-update-progress`).style.display = 'block';
+                    trackUpdateProgress(prefix, 'fw');
+                } else {
+                    showToast('Update greška: ' + (result.message || 'Unknown'), 'error');
+                }
+            } catch (err) {
+                showToast('Update greška: ' + err.message, 'error');
+            }
+        }
+        
+        async function startThExtFlashUpdate(prefix, slot) {
+            const ctrlId = currentRoom.th_id;
+            
+            try {
+                const response = await fetch(`/api/admin/esp_proxy/${currentRoom.id}/start_update?slot=${slot}&addr=${ctrlId}`);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showToast(`Ext.Flash update pokrenut na slot ${slot}, kontroler ${ctrlId}`, 'success');
+                    const _pb = document.getElementById(`${prefix}-ext-progress-bar`);
+                    const _pt = document.getElementById(`${prefix}-ext-progress-text`);
+                    if (_pb) _pb.value = 0;
+                    if (_pt) _pt.textContent = 'STARTING: 0%';
+                    document.getElementById(`${prefix}-ext-update-progress`).style.display = 'block';
+                    trackUpdateProgress(prefix, 'ext');
+                } else {
+                    showToast('Update greška: ' + (result.message || 'Unknown'), 'error');
+                }
+            } catch (err) {
+                showToast('Update greška: ' + err.message, 'error');
+            }
+        }
+        
+        // Scene Controller
+        async function startSceneFirmwareUpdate(prefix, slot) {
+            const ctrlId = currentRoom.scene_id;
+            
+            try {
+                const response = await fetch(`/api/admin/esp_proxy/${currentRoom.id}/start_update?slot=${slot}&addr=${ctrlId}`);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showToast(`Firmware update pokrenut na slot ${slot}, kontroler ${ctrlId}`, 'success');
+                    const _pb = document.getElementById(`${prefix}-fw-progress-bar`);
+                    const _pt = document.getElementById(`${prefix}-fw-progress-text`);
+                    if (_pb) _pb.value = 0;
+                    if (_pt) _pt.textContent = 'STARTING: 0%';
+                    document.getElementById(`${prefix}-fw-update-progress`).style.display = 'block';
+                    trackUpdateProgress(prefix, 'fw');
+                } else {
+                    showToast('Update greška: ' + (result.message || 'Unknown'), 'error');
+                }
+            } catch (err) {
+                showToast('Update greška: ' + err.message, 'error');
+            }
+        }
+        
+        async function startSceneExtFlashUpdate(prefix, slot) {
+            const ctrlId = currentRoom.scene_id;
+            
+            try {
+                const response = await fetch(`/api/admin/esp_proxy/${currentRoom.id}/start_update?slot=${slot}&addr=${ctrlId}`);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showToast(`Ext.Flash update pokrenut na slot ${slot}, kontroler ${ctrlId}`, 'success');
+                    const _pb = document.getElementById(`${prefix}-ext-progress-bar`);
+                    const _pt = document.getElementById(`${prefix}-ext-progress-text`);
+                    if (_pb) _pb.value = 0;
+                    if (_pt) _pt.textContent = 'STARTING: 0%';
+                    document.getElementById(`${prefix}-ext-update-progress`).style.display = 'block';
+                    trackUpdateProgress(prefix, 'ext');
+                } else {
+                    showToast('Update greška: ' + (result.message || 'Unknown'), 'error');
+                }
+            } catch (err) {
+                showToast('Update greška: ' + err.message, 'error');
+            }
+        }
+        
+        // Universal progress tracker
+        function trackUpdateProgress(prefix, type) {
+            let pollCount = 0;
+            let lastProgress = 0;
+            let maxProgress = 0;
+            let noProgressCount = 0;
+            const MAX_NO_PROGRESS_POLLS = 3; // 3 × 10s = 30s bez progresa
+            const MAX_TOTAL_POLLS = 9; // 9 × 10s = 90s ukupni timeout
+            
+            const interval = setInterval(async () => {
+                try {
+                    pollCount++;
+                    const response = await fetch(`/api/admin/esp_proxy/${currentRoom.id}/update_status`);
+                    
+                    if (!response.ok) {
+                        clearInterval(interval);
+                        showToast('Provjera rezultata update-a...', 'info');
+                        setTimeout(() => {
+                            document.getElementById(`${prefix}-${type}-update-progress`).style.display = 'none';
+                            if (prefix === 'pin1' || prefix === 'pin2') {
+                                loadPinSlotStatus(prefix);
+                                loadTabPIN(prefix === 'pin1' ? currentRoom.pin_id : currentRoom.sec_pin_id, prefix);
+                            }
+                            if (prefix === 'th') {
+                                loadThSlotStatus(prefix);
+                                loadTabTH();
+                            }
+                            if (prefix === 'scene') {
+                                loadSceneSlotStatus(prefix);
+                                loadTabScene();
+                            }
+                        }, 2000);
+                        return;
+                    }
+                    
+                    const status = await response.json();
+                    
+                    const progressBar = document.getElementById(`${prefix}-${type}-progress-bar`);
+                    const progressText = document.getElementById(`${prefix}-${type}-progress-text`);
+                    
+                    if (!progressBar || !progressText) {
+                        clearInterval(interval);
+                        return;
+                    }
+                    
+                    const currentProgress = status.progress || 0;
+                    
+                    // Zapamti maksimalni progress
+                    if (currentProgress > maxProgress) {
+                        maxProgress = currentProgress;
+                    }
+                    
+                    // No-progress detekcija
+                    if (currentProgress === lastProgress && status.state !== 0 && status.state !== 8 && status.state !== 7) {
+                        noProgressCount++;
+                        console.log(`[Update ${prefix}] No progress: ${noProgressCount}/${MAX_NO_PROGRESS_POLLS} at ${currentProgress}%`);
+                    } else {
+                        noProgressCount = 0;
+                    }
+                    lastProgress = currentProgress;
+                    
+                    progressBar.value = currentProgress;
+                    
+                    const stateNames = ['IDLE', 'STARTING', 'WAIT_START_ACK', 'SENDING_DATA', 'WAIT_DATA_ACK', 'FINISHING', 'WAIT_FINISH_ACK', 'FAILED', 'SUCCESS'];
+                    const stateName = stateNames[status.state] || 'UNKNOWN';
+                    progressText.textContent = `${stateName}: ${currentProgress}%`;
+                    
+                    // EKSPLICITNA DETEKCIJA ZAVRŠETKA - State 8 = SUCCESS, State 7 = FAILED
+                    if (status.state === 8) {
+                        clearInterval(interval);
+                        showToast('✅ Firmware update završen uspješno!', 'success');
+                        setTimeout(() => {
+                            document.getElementById(`${prefix}-${type}-update-progress`).style.display = 'none';
+                            if (prefix === 'pin1' || prefix === 'pin2') {
+                                loadPinSlotStatus(prefix);
+                                loadTabPIN(prefix === 'pin1' ? currentRoom.pin_id : currentRoom.sec_pin_id, prefix);
+                            }
+                            if (prefix === 'th') {
+                                loadThSlotStatus(prefix);
+                                loadTabTH();
+                            }
+                            if (prefix === 'scene') {
+                                loadSceneSlotStatus(prefix);
+                                loadTabScene();
+                            }
+                        }, 2000);
+                        return;
+                    }
+                    
+                    if (status.state === 7) {
+                        clearInterval(interval);
+                        showToast(`❌ Update greška: ${status.lastError || 'Unknown'}`, 'error');
+                        setTimeout(() => {
+                            document.getElementById(`${prefix}-${type}-update-progress`).style.display = 'none';
+                            if (prefix === 'pin1' || prefix === 'pin2') {
+                                loadPinSlotStatus(prefix);
+                                loadTabPIN(prefix === 'pin1' ? currentRoom.pin_id : currentRoom.sec_pin_id, prefix);
+                            }
+                            if (prefix === 'th') {
+                                loadThSlotStatus(prefix);
+                                loadTabTH();
+                            }
+                            if (prefix === 'scene') {
+                                loadSceneSlotStatus(prefix);
+                                loadTabScene();
+                            }
+                        }, 2000);
+                        return;
+                    }
+                    
+                    // Fallback: Ako je progress bio >80% a sada je pao na 0% (kontroler se resetovao)
+                    if (maxProgress >= 80 && currentProgress < 10 && status.state === 0) {
+                        clearInterval(interval);
+                        showToast('Update završen - kontroler resetovan', 'success');
+                        setTimeout(() => {
+                            document.getElementById(`${prefix}-${type}-update-progress`).style.display = 'none';
+                            if (prefix === 'pin1' || prefix === 'pin2') {
+                                loadPinSlotStatus(prefix);
+                                loadTabPIN(prefix === 'pin1' ? currentRoom.pin_id : currentRoom.sec_pin_id, prefix);
+                            }
+                            if (prefix === 'th') {
+                                loadThSlotStatus(prefix);
+                                loadTabTH();
+                            }
+                            if (prefix === 'scene') {
+                                loadSceneSlotStatus(prefix);
+                                loadTabScene();
+                            }
+                        }, 2000);
+                        return;
+                    }
+                    
+                    // No-progress timeout (30s bez promjene)
+                    if (noProgressCount >= MAX_NO_PROGRESS_POLLS) {
+                        clearInterval(interval);
+                        showToast(`⚠️ Timeout - nema progresa (zaglavljen na ${currentProgress}%)`, 'warning');
+                        setTimeout(() => {
+                            document.getElementById(`${prefix}-${type}-update-progress`).style.display = 'none';
+                            if (prefix === 'pin1' || prefix === 'pin2') loadPinSlotStatus(prefix);
+                            if (prefix === 'th') loadThSlotStatus(prefix);
+                            if (prefix === 'scene') loadSceneSlotStatus(prefix);
+                        }, 2000);
+                        return;
+                    }
+                    
+                    // Opšti timeout nakon 90 sekundi
+                    if (pollCount > MAX_TOTAL_POLLS) {
+                        clearInterval(interval);
+                        showToast('⚠️ Timeout - provjera rezultata...', 'warning');
+                        setTimeout(() => {
+                            document.getElementById(`${prefix}-${type}-update-progress`).style.display = 'none';
+                            if (prefix === 'pin1' || prefix === 'pin2') loadPinSlotStatus(prefix);
+                            if (prefix === 'th') loadThSlotStatus(prefix);
+                            if (prefix === 'scene') loadSceneSlotStatus(prefix);
+                        }, 2000);
+                    }
+                } catch (err) {
+                    clearInterval(interval);
+                    showToast('Greška pri praćenju progresa', 'error');
+                    console.error('[Update] Polling error:', err);
+                    setTimeout(() => {
+                        document.getElementById(`${prefix}-${type}-update-progress`).style.display = 'none';
+                        if (prefix === 'pin1' || prefix === 'pin2') {
+                            loadPinSlotStatus(prefix);
+                            loadTabPIN(prefix === 'pin1' ? currentRoom.pin_id : currentRoom.sec_pin_id, prefix);
+                        }
+                        if (prefix === 'th') {
+                            loadThSlotStatus(prefix);
+                            loadTabTH();
+                        }
+                        if (prefix === 'scene') {
+                            loadSceneSlotStatus(prefix);
+                            loadTabScene();
+                        }
+                    }, 2000);
+                }
+            }, 10000);
+        }
+        
+        // =============== THERMOSTAT FIRMWARE UPDATE FUNCTIONS ===============
+        async function loadThSlotStatus(prefix) {
+            console.log(`[TH] Loading slot status for ${prefix}...`);
+            const fwSlot = 1;
+            const extSlot = 5;
+            console.log(`[TH] Fetching slots via proxy for soba ${currentRoom.id}`);
+            
+            fetch(`/api/admin/esp_proxy/${currentRoom.id}/slots`)
+                .then(r => r.json())
+                .then(data => {
+                    console.log(`[TH] Received slots data:`, data);
+                    if (data.slots) {
+                        const fw = data.slots.find(s => s.id === fwSlot);
+                        const ext = data.slots.find(s => s.id === extSlot);
+                        console.log(`[TH] Slot ${fwSlot} (FW):`, fw);
+                        console.log(`[TH] Slot ${extSlot} (EXT):`, ext);
+                        
+                        if (fw) {
+                            const fwStatus = fw.valid ? 
+                                `✅ ${fw.size} bytes, v${fw.version?.toString(16) || 'N/A'}, CRC: ${fw.crc32}` :
+                                `❌ Invalid or empty`;
+                            document.getElementById(`${prefix}-slot${fwSlot}-status`).textContent = fwStatus;
+                        }
+                        
+                        if (ext) {
+                            const extStatus = ext.valid ?
+                                `✅ ${ext.size} bytes, ${ext.filename || 'binary'}, CRC: ${ext.crc32}` :
+                                `❌ Invalid or empty`;
+                            document.getElementById(`${prefix}-slot${extSlot}-status`).textContent = extStatus;
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error('Slot status error:', err);
+                    document.getElementById(`${prefix}-slot${fwSlot}-status`).textContent = 'Error loading';
+                    document.getElementById(`${prefix}-slot${extSlot}-status`).textContent = 'Error loading';
+                });
+        }
+        
+        async function uploadThFirmware(slot, fileInputId, prefix) {
+            const fileInput = document.getElementById(fileInputId);
+            if (!fileInput.files || !fileInput.files[0]) {
+                showToast('Molimo izaberite fajl', 'error');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('slot', slot);
+            formData.append('file', file);
+            
+            try {
+                showToast('Upload u toku...', 'info');
+                const response = await fetch(`/api/admin/esp_proxy/${currentRoom.id}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                if (result.status === 'success') {
+                    showToast(`Upload uspješan na slot ${slot}`, 'success');
+                    loadThSlotStatus(prefix);
+                } else {
+                    showToast('Upload neuspješan: ' + (result.message || 'Unknown error'), 'error');
+                }
+            } catch (err) {
+                showToast('Upload greška: ' + err.message, 'error');
+            }
+        }
+        
+        async function startThUpdate(prefix) {
+            const slot = 1;
+            const addr = 134217728; // 0x08000000
+            
+            try {
+                const response = await fetch(`http://${currentRoom.mdns}.local:${currentRoom.port}/start_update?slot=${slot}&addr=${addr}`);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showToast('Firmware update pokrenut', 'success');
+                    document.getElementById(`${prefix}-update-progress`).style.display = 'block';
+                    trackThUpdateProgress(prefix);
+                } else {
+                    showToast('Update greška: ' + (result.message || 'Unknown'), 'error');
+                }
+            } catch (err) {
+                showToast('Update greška: ' + err.message, 'error');
+            }
+        }
+        
+        function trackThUpdateProgress(prefix) {
+            let pollCount = 0;
+            let lastProgress = 0;
+            let noProgressCount = 0;
+            const MAX_NO_PROGRESS_POLLS = 3;
+            const MAX_TOTAL_POLLS = 9;
+            
+            const interval = setInterval(async () => {
+                pollCount++;
+                
+                try {
+                    const response = await fetch(`http://${currentRoom.mdns}.local:${currentRoom.port}/update_status`);
+                    const status = await response.json();
+                    
+                    const progressBar = document.getElementById(`${prefix}-progress-bar`);
+                    const progressText = document.getElementById(`${prefix}-progress-text`);
+                    
+                    progressBar.value = status.progress || 0;
+                    
+                    // No-progress detekcija
+                    if (status.progress === lastProgress) {
+                        noProgressCount++;
+                    } else {
+                        noProgressCount = 0;
+                    }
+                    lastProgress = status.progress;
+                    
+                    const stateNames = ['IDLE', 'STARTING', 'WAIT_START_ACK', 'SENDING_DATA', 'WAIT_DATA_ACK', 'FINISHING', 'WAIT_FINISH_ACK', 'FAILED', 'SUCCESS'];
+                    const stateName = stateNames[status.state] || 'UNKNOWN';
+                    progressText.textContent = `${stateName}: ${status.progress}%`;
+                    
+                    // State 8 = SUCCESS, 7 = FAILED
+                    if (status.state === 8) {
+                        clearInterval(interval);
+                        showToast('Firmware update završen uspješno!', 'success');
+                        setTimeout(() => {
+                            document.getElementById(`${prefix}-update-progress`).style.display = 'none';
+                            loadThSlotStatus(prefix);
+                        }, 3000);
+                    } else if (status.state === 7) {
+                        clearInterval(interval);
+                        showToast(`Update greška: ${status.lastError}`, 'error');
+                        setTimeout(() => {
+                            document.getElementById(`${prefix}-update-progress`).style.display = 'none';
+                            loadThSlotStatus(prefix);
+                        }, 3000);
+                    } else if (noProgressCount >= MAX_NO_PROGRESS_POLLS) {
+                        clearInterval(interval);
+                        showToast('Timeout - nema progresa', 'warning');
+                        setTimeout(() => {
+                            document.getElementById(`${prefix}-update-progress`).style.display = 'none';
+                            loadThSlotStatus(prefix);
+                        }, 2000);
+                    } else if (pollCount > MAX_TOTAL_POLLS) {
+                        clearInterval(interval);
+                        showToast('Timeout - opšti', 'warning');
+                        setTimeout(() => {
+                            document.getElementById(`${prefix}-update-progress`).style.display = 'none';
+                            loadThSlotStatus(prefix);
+                        }, 2000);
+                    }
+                } catch (err) {
+                    clearInterval(interval);
+                    showToast('Greška pri praćenju progresa: ' + err.message, 'error');
+                }
+            }, 10000);
+        }
+        
+        // =============== SCENE FIRMWARE UPDATE FUNCTIONS ===============
+        async function loadSceneSlotStatus(prefix) {
+            console.log(`[SCENE] Loading slot status for ${prefix}...`);
+            const fwSlot = 2;
+            const extSlot = 6;
+            console.log(`[SCENE] Fetching slots via proxy for soba ${currentRoom.id}`);
+            
+            fetch(`/api/admin/esp_proxy/${currentRoom.id}/slots`)
+                .then(r => r.json())
+                .then(data => {
+                    console.log(`[SCENE] Received slots data:`, data);
+                    if (data.slots) {
+                        const fw = data.slots.find(s => s.id === fwSlot);
+                        const ext = data.slots.find(s => s.id === extSlot);
+                        console.log(`[SCENE] Slot ${fwSlot} (FW):`, fw);
+                        console.log(`[SCENE] Slot ${extSlot} (EXT):`, ext);
+                        
+                        if (fw) {
+                            const fwStatus = fw.valid ? 
+                                `✅ ${fw.size} bytes, v${fw.version?.toString(16) || 'N/A'}, CRC: ${fw.crc32}` :
+                                `❌ Invalid or empty`;
+                            document.getElementById(`${prefix}-slot${fwSlot}-status`).textContent = fwStatus;
+                        }
+                        
+                        if (ext) {
+                            const extStatus = ext.valid ?
+                                `✅ ${ext.size} bytes, ${ext.filename || 'binary'}, CRC: ${ext.crc32}` :
+                                `❌ Invalid or empty`;
+                            document.getElementById(`${prefix}-slot${extSlot}-status`).textContent = extStatus;
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error('Slot status error:', err);
+                    document.getElementById(`${prefix}-slot${fwSlot}-status`).textContent = 'Error loading';
+                    document.getElementById(`${prefix}-slot${extSlot}-status`).textContent = 'Error loading';
+                });
+        }
+        
+        async function uploadSceneFirmware(slot, fileInputId, prefix) {
+            const fileInput = document.getElementById(fileInputId);
+            if (!fileInput.files || !fileInput.files[0]) {
+                showToast('Molimo izaberite fajl', 'error');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('slot', slot);
+            formData.append('file', file);
+            
+            try {
+                showToast('Upload u toku...', 'info');
+                const response = await fetch(`/api/admin/esp_proxy/${currentRoom.id}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                if (result.status === 'success') {
+                    showToast(`Upload uspješan na slot ${slot}`, 'success');
+                    loadSceneSlotStatus(prefix);
+                } else {
+                    showToast('Upload neuspješan: ' + (result.message || 'Unknown error'), 'error');
+                }
+            } catch (err) {
+                showToast('Upload greška: ' + err.message, 'error');
+            }
+        }
+        
+        async function startSceneUpdate(prefix) {
+            const slot = 2;
+            const addr = 134217728; // 0x08000000
+            
+            try {
+                const response = await fetch(`http://${currentRoom.mdns}.local:${currentRoom.port}/start_update?slot=${slot}&addr=${addr}`);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showToast('Firmware update pokrenut', 'success');
+                    document.getElementById(`${prefix}-update-progress`).style.display = 'block';
+                    trackSceneUpdateProgress(prefix);
+                } else {
+                    showToast('Update greška: ' + (result.message || 'Unknown'), 'error');
+                }
+            } catch (err) {
+                showToast('Update greška: ' + err.message, 'error');
+            }
+        }
+        
+        function trackSceneUpdateProgress(prefix) {
+            let pollCount = 0;
+            let lastProgress = 0;
+            let noProgressCount = 0;
+            const MAX_NO_PROGRESS_POLLS = 3;
+            const MAX_TOTAL_POLLS = 9;
+            
+            const interval = setInterval(async () => {
+                pollCount++;
+                
+                try {
+                    const response = await fetch(`http://${currentRoom.mdns}.local:${currentRoom.port}/update_status`);
+                    const status = await response.json();
+                    
+                    const progressBar = document.getElementById(`${prefix}-progress-bar`);
+                    const progressText = document.getElementById(`${prefix}-progress-text`);
+                    
+                    progressBar.value = status.progress || 0;
+                    
+                    // No-progress detekcija
+                    if (status.progress === lastProgress) {
+                        noProgressCount++;
+                    } else {
+                        noProgressCount = 0;
+                    }
+                    lastProgress = status.progress;
+                    
+                    const stateNames = ['IDLE', 'STARTING', 'WAIT_START_ACK', 'SENDING_DATA', 'WAIT_DATA_ACK', 'FINISHING', 'WAIT_FINISH_ACK', 'FAILED', 'SUCCESS'];
+                    const stateName = stateNames[status.state] || 'UNKNOWN';
+                    progressText.textContent = `${stateName}: ${status.progress}%`;
+                    
+                    // State 8 = SUCCESS, 7 = FAILED
+                    if (status.state === 8) {
+                        clearInterval(interval);
+                        showToast('Firmware update završen uspješno!', 'success');
+                        setTimeout(() => {
+                            document.getElementById(`${prefix}-update-progress`).style.display = 'none';
+                            loadSceneSlotStatus(prefix);
+                        }, 3000);
+                    } else if (status.state === 7) {
+                        clearInterval(interval);
+                        showToast(`Update greška: ${status.lastError}`, 'error');
+                        setTimeout(() => {
+                            document.getElementById(`${prefix}-update-progress`).style.display = 'none';
+                            loadSceneSlotStatus(prefix);
+                        }, 3000);
+                    } else if (noProgressCount >= MAX_NO_PROGRESS_POLLS) {
+                        clearInterval(interval);
+                        showToast('Timeout - nema progresa', 'warning');
+                        setTimeout(() => {
+                            document.getElementById(`${prefix}-update-progress`).style.display = 'none';
+                            loadSceneSlotStatus(prefix);
+                        }, 2000);
+                    } else if (pollCount > MAX_TOTAL_POLLS) {
+                        clearInterval(interval);
+                        showToast('Timeout - opšti', 'warning');
+                        setTimeout(() => {
+                            document.getElementById(`${prefix}-update-progress`).style.display = 'none';
+                            loadSceneSlotStatus(prefix);
+                        }, 2000);
+                    }
+                } catch (err) {
+                    clearInterval(interval);
+                    showToast('Greška pri praćenju progresa: ' + err.message, 'error');
+                }
+            }, 10000);
+        }
+        
+        function readPinLog(prefix, ctrlId) {
+            if (!ctrlId || ctrlId === 'N/A') return;
+            sendCtrlCmd(ctrlId, 'READ_LOG').then(r => {
+                if (r && r.status === 'success' && r.data) {
+                    const d = r.data;
+                    let logText = `📋 Log ID: ${d.log_id || 'N/A'}\n`;
+                    logText += `🎫 Event: ${d.event_name || d.event_code || 'N/A'}\n`;
+                    logText += `📝 Opis: ${d.event_description || 'N/A'}\n`;
+                    logText += `👤 Type/Group: ${d.type}/${d.group}\n`;
+                    if (d.card_id) logText += `💳 Card ID: ${d.card_id}\n`;
+                    logText += `🕒 Vrijeme: ${d.timestamp || d.date + ' ' + d.time}\n`;
+                    logText += `🆔 Device ID: ${d.device_id}\n`;
+                    logText += `\n--- RAW JSON ---\n${JSON.stringify(d, null, 2)}`;
+                    document.getElementById(`${prefix}-log`).textContent = logText;
+                } else {
+                    document.getElementById(`${prefix}-log`).textContent = 'Nema logova ili greška u čitanju';
+                }
+            });
+        }
+        
+        function setPinPassword(ctrlId, typeSelId, valInpId, prefix) {
+            const type = document.getElementById(typeSelId).value;
+            const password = document.getElementById(valInpId).value;
+            
+            // Validacija dužine prema tipu
+            const expectedLength = type === 'SERVICE' ? 5 : 4;
+            if (!password || password.length !== expectedLength) {
+                alert(`Lozinka mora biti tačno ${expectedLength} cifara za ${type}!`);
+                return;
+            }
+            
+            let params = { TYPE: type, PASSWORD: password };
+            
+            // Za GUEST passworde dodaj expiry time (30 dana od danas)
+            if (type === 'GUEST') {
+                params.GUEST_ID = '1';
+                const expiry = new Date();
+                expiry.setDate(expiry.getDate() + 30);
+                const yyyy = expiry.getFullYear().toString().slice(-2);
+                const mm = String(expiry.getMonth() + 1).padStart(2, '0');
+                const dd = String(expiry.getDate()).padStart(2, '0');
+                const hh = String(expiry.getHours()).padStart(2, '0');
+                const min = String(expiry.getMinutes()).padStart(2, '0');
+                params.EXPIRY = `${hh}${min}${dd}${mm}${yyyy}`; // HHMMDDMMYY format
+            }
+            
+            sendCtrlCmd(ctrlId, 'SET_PASSWORD', params).then(r => {
+                if (r && r.status === 'success') {
+                    alert('Lozinka uspješno postavljena!');
+                    loadTabPIN(ctrlId, prefix); // Refresh data
+                } else {
+                    alert('Greška pri postavljanju lozinke!');
+                }
+            });
+        }
+        
+        function setPinSysId(ctrlId, inputId, prefix) {
+            const sysidRaw = document.getElementById(inputId).value.trim();
+
+            if (!/^[0-9]{5}$/.test(sysidRaw)) {
+                alert('System ID mora biti 5 cifara (10000-65000)');
+                return;
+            }
+
+            const sysidDec = parseInt(sysidRaw, 10);
+            if (sysidDec < 10000 || sysidDec > 65000) {
+                alert('System ID mora biti u rasponu 10000-65000');
+                return;
+            }
+
+            sendCtrlCmd(ctrlId, 'SET_SYSID', { VALUE: sysidDec }).then(r => {
+                if (r && r.status === 'success') {
+                    alert('System ID uspješno postavljen!');
+                    loadTabPIN(ctrlId, prefix); // Refresh
+                } else {
+                    alert('Greška pri postavljanju System ID!');
+                }
+            });
+        }
+        
+        function setPinPass(ctrlId, typeSelId, valInpId) {
+            const type = document.getElementById(typeSelId).value;
+            const val = document.getElementById(valInpId).value;
+            let params = { TYPE: type, PASSWORD: val };
+            if (type === 'GUEST') params.GUEST_ID = '1';
+            
+            sendCtrlCmd(ctrlId, 'SET_PASSWORD', params);
+        }
+        
+        function setLang(ctrlId, langVal) {
+             sendCtrlCmd(ctrlId, 'SET_LANG', { VALUE: langVal });
+        }
+        
+        function setSysId(ctrlId, inpId) {
+            const val = document.getElementById(inpId).value;
+            sendCtrlCmd(ctrlId, 'SET_SYSID', { VALUE: val });
+        }
+
+        // --- TAB 4: THERMOSTAT ---
+        async function loadTabTH() {
+            const tid = currentRoom.th_id;
+            if (!tid || tid === 'N/A') return;
+            
+            // 1. GET_VERSION - Firmware verzija
+            sendCtrlCmd(tid, 'GET_VERSION').then(r => {
+                if (r && r.data) {
+                    const d = r.data;
+                    let info = '';
+                    if (d.bootloader_version) info += `BL: ${d.bootloader_version}<br>`;
+                    if (d.application_version) info += `App: ${d.application_version}<br>`;
+                    if (d.bootloader_backup_version) info += `BL Backup: ${d.bootloader_backup_version}<br>`;
+                    if (d.application_backup_version) info += `App Backup: ${d.application_backup_version}<br>`;
+                    if (d.new_file_version) info += `New File: ${d.new_file_version}`;
+                    document.getElementById('th-fw-version').innerHTML = info || 'N/A';
+                } else {
+                    document.getElementById('th-fw-version').textContent = 'N/A';
+                }
+            });
+            
+            // 2. GET_ROOM_TEMP - Kompletan status termostata
+            sendCtrlCmd(tid, 'GET_ROOM_TEMP').then(r => {
+                if (r && r.data) {
+                    const d = r.data;
+                    
+                    // Temperatura i setpoint
+                    document.getElementById('th-temp').textContent = d.room_temperature || '--';
+                    document.getElementById('th-setpoint').textContent = d.setpoint_temperature || '--';
+                    document.getElementById('rng-th-set').value = d.setpoint_temperature || 22;
+                    document.getElementById('lbl-th-set').textContent = d.setpoint_temperature || 22;
+                    
+                    // Mode (0=OFF, 1=COOLING, 2=HEATING)
+                    const modeMap = {0: 'OFF', 1: 'COOLING', 2: 'HEATING'};
+                    document.getElementById('th-mode').textContent = modeMap[d.thermostat_control_mode] || 'N/A';
+                    
+                    // Fan
+                    document.getElementById('th-fan-speed').textContent = d.fan_speed || '0';
+                    document.getElementById('th-fan-ctrl').textContent = d.fan_control_mode || 'N/A';
+                    
+                    // Setpoint limiti
+                    document.getElementById('th-sp-max').textContent = d.setpoint_max || '30';
+                    document.getElementById('th-sp-min').textContent = d.setpoint_min || '15';
+                    
+                    // Update slider min/max
+                    const slider = document.getElementById('rng-th-set');
+                    slider.min = d.setpoint_min || 15;
+                    slider.max = d.setpoint_max || 30;
+                    
+                    // Forwarding checkboxes
+                    document.getElementById('chk-fwd-heating').checked = d.forward_heating || false;
+                    document.getElementById('chk-fwd-cooling').checked = d.forward_cooling || false;
+                    
+                    // Enable checkboxes
+                    document.getElementById('chk-enable-heating').checked = d.thst_enable_heating !== undefined ? d.thst_enable_heating : true;
+                    document.getElementById('chk-enable-cooling').checked = d.thst_enable_cooling !== undefined ? d.thst_enable_cooling : true;
+                } else {
+                    document.getElementById('th-temp').textContent = '--';
+                    document.getElementById('th-setpoint').textContent = '--';
+                    document.getElementById('th-mode').textContent = 'N/A';
+                }
+            });
+            
+            // 3. Load firmware slot status
+            loadThSlotStatus('th');
+        }
+        
+        function setThTemp() {
+            const val = document.getElementById('rng-th-set').value;
+            sendCtrlCmd(currentRoom.th_id, 'SET_ROOM_TEMP', { VALUE: val }).then(r => {
+                if (r && r.status === 'success') {
+                    showToast(`Temperatura postavljena na ${val}°C`, 'success');
+                    loadTabTH(); // Refresh
+                }
+            });
+        }
+        
+        function setThForward(cmd, checked) {
+            const value = checked ? 1 : 0;
+            sendCtrlCmd(currentRoom.th_id, cmd, { VALUE: value }).then(r => {
+                if (r && r.status === 'success') {
+                    const label = cmd.includes('HEATING') ? 'Heating' : 'Cooling';
+                    showToast(`Forward ${label} ${checked ? 'omogućen' : 'onemogućen'}`, 'success');
+                }
+            });
+        }
+        
+        function setThEnable(cmd, checked) {
+            const value = checked ? 1 : 0;
+            sendCtrlCmd(currentRoom.th_id, cmd, { VALUE: value }).then(r => {
+                if (r && r.status === 'success') {
+                    const label = cmd.includes('HEATING') ? 'Heating' : 'Cooling';
+                    showToast(`${label} ${checked ? 'omogućen' : 'onemogućen'}`, 'success');
+                }
+            });
+        }
+        
+        function setThPin(pin, state) {
+            sendCtrlCmd(currentRoom.th_id, 'SET_PIN', { PIN: pin, VALUE: state }).then(r => {
+                if (r && r.status === 'success') {
+                    showToast(`Pin ${pin} postavljen na ${state ? 'ON' : 'OFF'}`, 'success');
+                }
+            });
+        }
+        
+        function setThLanguage() {
+            const tid = currentRoom.th_id;
+            if (!tid || tid === 'N/A') return;
+            
+            const langValue = document.getElementById('th-lang-select').value;
+            const langNames = { '0': 'Srpski', '1': 'English', '2': 'Deutsch' };
+            
+            sendCtrlCmd(tid, 'SET_LANG', { VALUE: langValue }).then(r => {
+                if (r?.status === 'success' && r?.data?.result?.includes('OK')) {
+                    showToast(`Jezik postavljen na ${langNames[langValue]}`, 'success');
+                } else {
+                    showToast('Greška pri postavljanju jezika', 'error');
+                }
+            });
+        }
+        
+        function toggleTh(cmd, checked) {
+            sendCmd(cmd, { VALUE: checked ? '1' : '0' });
+        }
+
+        // --- TAB 5: SCENE ---
+        async function loadTabScene() {
+            const sid = currentRoom.scene_id;
+            if (!sid || sid === 'N/A') return;
+            
+            // GET_VERSION - firmware info
+            sendCtrlCmd(sid, 'GET_VERSION').then(r => {
+                if (r && r.data) {
+                    const d = r.data;
+                    let info = '';
+                    if (d.bootloader_version) info += `BL: ${d.bootloader_version}<br>`;
+                    if (d.application_version) info += `App: ${d.application_version}<br>`;
+                    if (d.bootloader_backup_version) info += `BL Backup: ${d.bootloader_backup_version}<br>`;
+                    if (d.application_backup_version) info += `App Backup: ${d.application_backup_version}<br>`;
+                    if (d.new_file_version) info += `New File: ${d.new_file_version}`;
+                    document.getElementById('scene-fw-version').innerHTML = info || 'N/A';
+                } else {
+                    document.getElementById('scene-fw-version').textContent = 'N/A';
+                }
+            });
+            
+            // GET_ROOM_STATUS - card stacker status
+            sendCtrlCmd(sid, 'GET_ROOM_STATUS').then(r => {
+                if (r?.data) {
+                    const status = r.data.room_status || 'N/A';
+                    const inserted = r.data.card_inserted ? '✅ Kartica ubačena' : '❌ Kartica izvađena';
+                    document.getElementById('scene-room-status').textContent = `${status} (${inserted})`;
+                }
+            });
+            
+            // GET_GUEST_IN_TEMP
+            sendCtrlCmd(sid, 'GET_GUEST_IN_TEMP').then(r => {
+                if (r?.data?.guest_in_temperature !== undefined) {
+                    const temp = r.data.guest_in_temperature;
+                    document.getElementById('scene-guest-in-temp').textContent = temp;
+                    document.getElementById('scene-guest-in-input').value = temp;
+                }
+            });
+            
+            // GET_GUEST_OUT_TEMP
+            sendCtrlCmd(sid, 'GET_GUEST_OUT_TEMP').then(r => {
+                if (r?.data?.guest_out_temperature !== undefined) {
+                    const temp = r.data.guest_out_temperature;
+                    document.getElementById('scene-guest-out-temp').textContent = temp;
+                    document.getElementById('scene-guest-out-input').value = temp;
+                }
+            });
+            
+            // QR_CODE_GET
+            sendCtrlCmd(sid, 'QR_CODE_GET').then(r => {
+                if (r?.data?.qr_code) {
+                    document.getElementById('scene-qr-code').textContent = r.data.qr_code;
+                    document.getElementById('scene-qr-input').value = r.data.qr_code;
+                } else {
+                    document.getElementById('scene-qr-code').textContent = 'Nije postavljeno';
+                }
+            });
+            
+            // Load firmware slot status
+            loadSceneSlotStatus('scene');
+        }
+        
+        function setSceneGuestTemp(type) {
+            const sid = currentRoom.scene_id;
+            if (!sid || sid === 'N/A') return;
+            
+            const cmd = type === 'IN' ? 'SET_GUEST_IN_TEMP' : 'SET_GUEST_OUT_TEMP';
+            const inputId = type === 'IN' ? 'scene-guest-in-input' : 'scene-guest-out-input';
+            const value = parseInt(document.getElementById(inputId).value);
+            
+            if (value < 5 || value > 40) {
+                showToast('Temperatura mora biti između 5°C i 40°C', 'error');
+                return;
+            }
+            
+            sendCtrlCmd(sid, cmd, { VALUE: value }).then(r => {
+                if (r?.status === 'success') {
+                    showToast(`Guest ${type} temperatura postavljena na ${value}°C`, 'success');
+                    loadTabScene(); // Refresh
+                }
+            });
+        }
+        
+        function setSceneQRCode() {
+            const sid = currentRoom.scene_id;
+            if (!sid || sid === 'N/A') return;
+            
+            const qrCode = document.getElementById('scene-qr-input').value.trim();
+            if (!qrCode) {
+                showToast('QR Code ne može biti prazan', 'error');
+                return;
+            }
+            if (qrCode.length > 128) {
+                showToast('QR Code ne može biti duži od 128 karaktera', 'error');
+                return;
+            }
+            
+            sendCtrlCmd(sid, 'QR_CODE_SET', { QR_CODE: qrCode }).then(r => {
+                if (r?.status === 'success' && r?.data?.result?.includes('OK')) {
+                    showToast('QR Code uspješno postavljen', 'success');
+                    loadTabScene(); // Refresh
+                } else {
+                    showToast('Greška pri postavljanju QR Code', 'error');
+                }
+            });
+        }
+        
+        function setScenePin(pin, state) {
+            sendCtrlCmd(currentRoom.scene_id, 'SET_PIN', { PIN: pin, VALUE: state }).then(r => {
+                if (r && r.status === 'success') {
+                    showToast(`Pin ${pin} postavljen na ${state ? 'ON' : 'OFF'}`, 'success');
+                }
+            });
+        }
+        
+        function setSceneLanguage() {
+            const sid = currentRoom.scene_id;
+            if (!sid || sid === 'N/A') return;
+            
+            const langValue = document.getElementById('scene-lang-select').value;
+            const langNames = { '0': 'Srpski', '1': 'English', '2': 'Deutsch' };
+            
+            sendCtrlCmd(sid, 'SET_LANG', { VALUE: langValue }).then(r => {
+                if (r?.status === 'success' && r?.data?.result?.includes('OK')) {
+                    showToast(`Jezik postavljen na ${langNames[langValue]}`, 'success');
+                } else {
+                    showToast('Greška pri postavljanju jezika', 'error');
+                }
+            });
+        }
+
+        // --- TOAST UTILS ---
+        function showToast(msg, type='info') {
+            const toast = document.createElement('div');
+            toast.textContent = msg;
+            toast.style.background = type === 'error' ? '#d9534f' : type === 'success' ? '#5cb85c' : '#333';
+            toast.style.color = '#fff';
+            toast.style.padding = '10px 20px';
+            toast.style.marginBottom = '10px';
+            toast.style.borderRadius = '4px';
+            toast.style.opacity = '0.9';
+            document.getElementById('toast-container').appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+    </script>
+
+    <script>
+        // --- HVAC CONTROLLER FUNCTIONS ---
+        async function loadTabHVAC() {
+            showToast('Učitavam HVAC status...', 'info');
+            const data = await sendCmd('GET_STATUS');
+            if (!data || !data.data) {
+                showToast('Greška pri učitavanju HVAC statusa', 'error');
+                return;
+            }
+            
+            const d = data.data;
+            console.log("HVAC Status:", d);
+
+            // Main Mode
+            const mode = d.mode_control?.mode || 'N/A';
+            document.getElementById('hvac-mode').textContent = mode;
+            document.getElementById('hvac-mode').className = `info-badge ${mode === 'HEATING' ? 'warning' : mode === 'COOLING' ? 'success' : ''}`;
+
+            // Pumpa Podno
+            const pumpPodnoMode = d.toplik?.logic?.pump_podno_mode || 'N/A';
+            document.getElementById('hvac-pump-podno-mode-status').textContent = pumpPodnoMode;
+            document.getElementById('hvac-pump-podno-mode').checked = (pumpPodnoMode === 'MANUAL');
+            document.getElementById('hvac-pump-podno-manual').checked = d.toplik?.outputs?.pump_podno_manual_on_off || false;
+            document.getElementById('hvac-pump-podno-manual').disabled = (pumpPodnoMode !== 'MANUAL');
+            document.getElementById('hvac-pump-podno-state').textContent = d.toplik?.outputs?.pump_podno_manual_on_off ? 'ON' : 'OFF';
+            document.getElementById('hvac-pump-podno-expected').textContent = d.toplik?.logic?.pump_podno_expected_run ? 'RUN' : 'STOP';
+            
+            const pumpPodnoInput = d.toplik?.inputs?.status_pump_podno;
+            const pumpPodnoInputEl = document.getElementById('hvac-pump-podno-input');
+            pumpPodnoInputEl.textContent = pumpPodnoInput ? 'RUN' : 'STOP';
+            pumpPodnoInputEl.className = `info-badge ${pumpPodnoInput ? 'success' : ''}`;
+            
+            // Pumpa Fancoil
+            const pumpFancoilMode = d.toplik?.logic?.pump_fancoil_mode || 'N/A';
+            document.getElementById('hvac-pump-fancoil-mode-status').textContent = pumpFancoilMode;
+            document.getElementById('hvac-pump-fancoil-mode').checked = (pumpFancoilMode === 'MANUAL');
+            document.getElementById('hvac-pump-fancoil-manual').checked = d.toplik?.outputs?.pump_fancoil_manual_on_off || false;
+            document.getElementById('hvac-pump-fancoil-manual').disabled = (pumpFancoilMode !== 'MANUAL');
+            document.getElementById('hvac-pump-fancoil-state').textContent = d.toplik?.outputs?.pump_fancoil_manual_on_off ? 'ON' : 'OFF';
+            document.getElementById('hvac-pump-fancoil-expected').textContent = d.toplik?.logic?.pump_fancoil_expected_run ? 'RUN' : 'STOP';
+            
+            const pumpFancoilInput = d.toplik?.inputs?.status_pump_fancoil;
+            const pumpFancoilInputEl = document.getElementById('hvac-pump-fancoil-input');
+            pumpFancoilInputEl.textContent = pumpFancoilInput ? 'RUN' : 'STOP';
+            pumpFancoilInputEl.className = `info-badge ${pumpFancoilInput ? 'success' : ''}`;
+
+            // Vanjska rasvjeta
+            const lightRelayState = d.toplik?.outputs?.relay_k1_vanjska_rasvjeta;
+            const lightRelayEl = document.getElementById('hvac-light-relay-status');
+            lightRelayEl.textContent = lightRelayState ? 'ON' : 'OFF';
+            lightRelayEl.className = `info-badge ${lightRelayState ? 'success' : ''}`;
+            
+            const lightInputState = d.toplik?.inputs?.status_vanjska_rasvjeta;
+            const lightInputEl = document.getElementById('hvac-light-input-status');
+            lightInputEl.textContent = lightInputState ? 'ON' : 'OFF';
+            lightInputEl.className = `info-badge ${lightInputState ? 'success' : ''}`;
+            
+            document.getElementById('hvac-timer-on').value = d.light?.timer_on_type === 'MANUAL' ? d.light.on_time.replace(':', '') : d.light?.timer_on_type || '';
+            document.getElementById('hvac-timer-off').value = d.light?.timer_off_type === 'MANUAL' ? d.light.off_time.replace(':', '') : d.light?.timer_off_type || '';
+            
+            // Fancoil Manual
+            document.getElementById('hvac-fc-301').checked = d.toplik?.outputs?.fancoil_301_manual_on_off || false;
+            document.getElementById('hvac-fc-302').checked = d.toplik?.outputs?.fancoil_302_manual_on_off || false;
+            document.getElementById('hvac-fc-303').checked = d.toplik?.outputs?.fancoil_303_manual_on_off || false;
+            document.getElementById('hvac-fc-fitnes').checked = d.toplik?.outputs?.fancoil_fitnes_manual_on_off || false;
+            
+            // Other Relays
+            document.getElementById('hvac-relay-k2').checked = d.toplik?.outputs?.relay_k2_rezerva || false;
+            document.getElementById('hvac-relay-k3').checked = d.toplik?.outputs?.relay_k3_rezerva || false;
+
+            // Diagnostics
+            let diagText = 'PCA9685:\n';
+            if (d.toplik?.diag) {
+                for (const [key, value] of Object.entries(d.toplik.diag)) {
+                    diagText += `  ${key}: ${value}\n`;
+                }
+            } else {
+                diagText += '  N/A\n';
+            }
+            diagText += '\nINPUTS:\n';
+            if (d.toplik?.inputs) {
+                for (const [key, value] of Object.entries(d.toplik.inputs)) {
+                    diagText += `  ${key}: ${value}\n`;
+                }
+            } else {
+                diagText += '  N/A\n';
+            }
+            document.getElementById('hvac-diagnostics').textContent = diagText;
+            
+            showToast('HVAC status učitan', 'success');
+        }
+
+        async function sendHvacCmd(cmd, extraParams = {}) {
+            showToast(`Šaljem HVAC komandu ${cmd}...`);
+            const params = { CMD: cmd, ...extraParams };
+            const res = await sendProxy(params);
+            if (res && res.success) {
+                showToast("Uspješno!", "success");
+                setTimeout(loadTabHVAC, 500); // Refresh status after command
+                return res.data;
+            } else {
+                showToast(res?.message || "Greška!", "error");
+                return null;
+            }
+        }
+
+        function setHvacPumpMode(pump, isManual) {
+            const mode = isManual ? 'MANUAL' : 'AUTO';
+            sendHvacCmd('SET_PUMP_MODE', { PUMP: pump, MODE: mode });
+        }
+
+        function setHvacPumpManual(pump, isOn) {
+            const value = isOn ? 1 : 0;
+            sendHvacCmd('SET_PUMP_MANUAL', { PUMP: pump, VALUE: value });
+        }
+
+        function setHvacFancoil(fc, isOn) {
+            const value = isOn ? 1 : 0;
+            sendHvacCmd('SET_FANCOIL_MANUAL', { FC: fc, VALUE: value });
+        }
+
+        function setHvacRelay(relay, isOn) {
+            const value = isOn ? 1 : 0;
+            const cmd = relay === 'K2' ? 'SET_RELAY_K2' : 'SET_RELAY_K3';
+            sendHvacCmd(cmd, { VALUE: value });
+        }
+
+        function setHvacTimer() {
+            const ton = document.getElementById('hvac-timer-on').value;
+            const toff = document.getElementById('hvac-timer-off').value;
+            sendHvacCmd('SET_TIMER', { TIMERON: ton, TIMEROFF: toff });
+        }
+    </script>
+</body>
+</html>

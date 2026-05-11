@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="hr" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <title data-translate-key="page_title">Kontrola Sobe</title>
+    
+    <style>
+      :root {
+        --lang-btn-size: 2.5rem; 
+      }
+      main {
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 1rem;
+      }
+      article {
+        margin-bottom: 1.5rem;
+      }
+      
+      /* --- Stilovi za header i slider --- */
+      .termostat-header-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid var(--pico-muted-border-color);
+        padding-bottom: 0.75rem;
+      }
+      .termostat-header {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0; 
+        border-bottom: none;
+        padding-bottom: 0;
+      }
+      #current-temp-display {
+        color: var(--pico-muted-color);
+        font-weight: normal;
+        font-size: 1.5rem;
+        margin-left: 0.5rem;
+      }
+      .slider-container output {
+        font-size: 3.5rem;
+        font-weight: bold;
+        display: block;
+        text-align: center;
+        margin-bottom: 1rem;
+        transition: color 0.3s ease;
+      }
+      .slider-container output::after {
+        content: " °C";
+        font-size: 2rem;
+        color: var(--pico-muted-color);
+        vertical-align: super;
+      }
+      .output-gray { color: var(--pico-muted-color) !important; }
+      .output-blue { color: #007bff !important; }
+      .output-green { color: #28a745 !important; }
+      .output-red { color: #dc3545 !important; }
+      
+      /* --- Kontrole i jezici (Isto) --- */
+      .controls-article .icon-header,
+      .controls-article hr { width: 100%; text-align: center; }
+      .slider-container { padding-top: 1rem; }
+      input[type="range"] { width: 100%; }
+      .switch-list-container { display: block; width: 100%; }
+      .switch-list-container label[for^="switch-"] {
+        display: flex; justify-content: space-between; align-items: center; 
+        width: 100%; font-size: 2rem; margin-bottom: 1.5rem;
+      }
+      .switch-list-container input[role="switch"] { font-size: 1.8rem; flex-shrink: 0; }
+      label[for^="switch-"] span { display: flex; align-items: center; gap: 0.75rem; width: auto; }
+      .language-switcher { display: flex; justify-content: center; gap: 1rem; margin-top: 2rem; }
+      .lang-btn {
+        background-color: transparent; border: none; padding: 0; cursor: pointer;
+        opacity: 0.5; transition: opacity 0.2s ease, transform 0.2s ease; border-radius: 50%;
+      }
+      .lang-btn:hover { opacity: 1; transform: scale(1.1); }
+      .lang-btn.active { opacity: 1; box-shadow: 0 0 10px 2px var(--pico-primary); }
+      .lang-btn img {
+        display: block; width: var(--lang-btn-size); height: var(--lang-btn-size);
+        border-radius: 50%; object-fit: cover; 
+      }
+
+      /* --- Alexa Uputstva Stilovi --- */
+      #alexa-instructions-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        opacity: 1;
+        transition: opacity 0.3s ease;
+        padding: 1rem;
+      }
+      #alexa-instructions-overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #alexa-instructions-overlay article {
+        max-width: 500px;
+        width: 100%;
+        text-align: center;
+      }
+      #alexa-instructions-overlay p {
+        font-size: 1.1rem;
+        line-height: 1.6;
+      }
+
+      /* --- Media Query --- */
+      @media (max-width: 500px) {
+        main { margin: 0.5rem; padding: 0.5rem; }
+        .switch-list-container label[for^="switch-"] { font-size: 1.5rem; gap: 1rem; }
+        .switch-list-container input[role="switch"] { font-size: 1.3rem; }
+        .termostat-header { font-size: 1.5rem; }
+        .termostat-header-wrapper { padding-bottom: 0.5rem; }
+        .slider-container output { font-size: 3rem; }
+        :root { --lang-btn-size: 2rem; }
+      }
+    </style>
+  </head>
+  <body>
+
+    <main>
+      <h1 style="text-align: center;" data-translate-key="title">Kontrola Sobe</h1>
+
+      <article>
+        
+        <div class="termostat-header-wrapper">
+          <h3 class="termostat-header">
+            <i class="bi bi-thermometer-half"></i>
+            <span data-translate-key="thermostat_title">Temperatura</span>
+            <span id="current-temp-display"></span>
+          </h3>
+          <input type="checkbox" id="switch-thermostat" name="switch-thermostat" role="switch" data-device="thermostat_power" style="margin-left: 1rem;">
+        </div>
+        
+        <div class="slider-container">
+          <output id="temp-vrijednost">22</output>
+          <input 
+            type="range" 
+            id="temp-slider" 
+            name="temp-slider" 
+            min="16" 
+            max="30" 
+            value="22"
+            step="1" data-device="termostat_set"
+          >
+        </div>
+      </article>
+      
+      <article class="controls-article">
+        
+        <h3 class="icon-header">
+          <i class="bi bi-toggles"></i>
+          <span data-translate-key="controls_title">Kontrole</span>
+        </h3>
+        <hr>
+
+        <div class="switch-list-container">
+        
+          <label for="switch-1">
+            <span><i class="bi bi-lightbulb"></i><span data-translate-key="light_luster">Glavno</span></span>
+            <input type="checkbox" id="switch-1" name="switch-1" role="switch" data-device="light_luster">
+          </label>
+          
+          <label for="switch-2">
+            <span><i class="bi bi-lamp"></i><span data-translate-key="light_ambient">Ambient</span></span>
+            <input type="checkbox" id="switch-2" name="switch-2" role="switch" data-device="light_ambient">
+          </label>
+
+          <label for="switch-3">
+            <span><i class="bi bi-usb-mini"></i><span data-translate-key="light_krevet">Krevet</span></span>
+            <input type="checkbox" id="switch-3" name="switch-3" role="switch" data-device="light_krevet">
+          </label>
+          
+          <label for="switch-4">
+            <span><i class="bi bi-sun"></i><span data-translate-key="light_wc">WC</span></span>
+            <input type="checkbox" id="switch-4" name="switch-4" role="switch" data-device="light_wc">
+          </label>
+
+          <label for="switch-5">
+            <span><i class="bi bi-vinyl"></i><span data-translate-key="light_ogledalo">Ogledalo</span></span>
+            <input type="checkbox" id="switch-5" name="switch-5" role="switch" data-device="light_ogledalo">
+          </label>
+          
+          <button id="btn-open-door" style="width: 100%; font-size: 1.5rem; padding: 1rem; margin-top: 1.5rem;">
+            <i class="bi bi-door-open"></i>
+            <span data-translate-key="open_door">OPEN DOOR</span>
+          </button>
+
+          {% if has_rampa %}
+          <button id="btn-raise-ramp" style="width: 100%; font-size: 1.5rem; padding: 1rem; margin-top: 0.75rem;">
+            <i class="bi bi-arrow-up-circle"></i>
+            <span data-translate-key="raise_ramp">PODIGNI RAMPU</span>
+          </button>
+          {% endif %}
+
+        </div>
+      </article>
+
+      {% if has_alexa %}
+      <div id="alexa-instructions-overlay" class="hidden">
+        <article>
+          <h4 data-translate-key="alexa_title"></h4>
+          <p data-translate-key="alexa_instructions"></p>
+        </article>
+      </div>
+      {% endif %}
+
+      <div class="language-switcher">
+        {% if has_alexa %}
+        <button id="alexa-btn" class="lang-btn">
+          <img src="/static/icons_menu_alexa.png" alt="Alexa Uputstva">
+        </button>
+        {% endif %}
+        <button class="lang-btn" data-lang="bhs">
+          <img src="/static/icons_menu_language_bhsc.png" alt="BHS Jezici">
+        </button>
+        <button class="lang-btn" data-lang="eng">
+          <img src="/static/icons_menu_language_eng.png" alt="English">
+        </button>
+        <button class="lang-btn" data-lang="de">
+          <img src="/static/icons_menu_language_ger.png" alt="Deutsch">
+        </button>
+      </div>
+
+    </main>
+    
+    <script>
+      // --------------------------------------------------------
+      // JAVASCRIPT (Verzija 8.4 - Granulacija 1.0°C)
+      // --------------------------------------------------------
+
+      // --- 1. RJEČNIK ZA PREVODE ---
+      const translations = {
+        bhs: {
+          page_title: "Kontrola Sobe", title: "Kontrola Sobe", thermostat_title: "Temperatura", controls_title: "Kontrole",
+          light_luster: "Glavno", light_ambient: "Ambient", light_krevet: "Krevet", light_wc: "WC", light_ogledalo: "Ogledalo",
+          open_door: "OTVORI VRATA", raise_ramp: "PODIGNI RAMPU",
+          alexa_title: "Alexa Glasovne Komande",
+          alexa_instructions: "Dragi gosti, u sobi se nalazi glasovni asistent Alexa. Pozovite ga sa \"ALEXA !!!\" i kažite komandu.\nZa svjetla koristite imena: Main, Ambient, Bed (ili Night), Bathroom, Mirror.\nPrimjeri: \"Alexa, turn on Main\", \"Alexa, turn off Bed\".\nZa temperaturu koristite \"Thermostat\" ili \"Temperature\" (isto značenje). Primjer: \"Alexa, set Thermostat to 22\".\nAleksu možete koristiti i kao Bluetooth zvučnik (komanda \"Alexa, pair bluetooth\") ili za slušanje muzike (Spotify, Radio stanice)."
+        },
+        eng: {
+          page_title: "Room Control", title: "Room Control", thermostat_title: "Temperature", controls_title: "Controls",
+          light_luster: "Main", light_ambient: "Ambient", light_krevet: "Bed Light", light_wc: "WC Light", light_ogledalo: "Mirror Light",
+          open_door: "OPEN DOOR", raise_ramp: "RAISE BARRIER",
+          alexa_title: "Alexa Voice Commands",
+          alexa_instructions: "Dear guests, this room is equipped with an Alexa voice assistant. Call it with \"ALEXA !!!\" and say a command.\nFor lights use names: Main, Ambient, Bed (or Night), Bathroom, Mirror.\nExamples: \"Alexa, turn on Main\", \"Alexa, turn off Bed\".\nFor temperature use \"Thermostat\" or \"Temperature\" (same function). Example: \"Alexa, set Thermostat to 22\".\nYou can also use Alexa as a Bluetooth speaker (command \"Alexa, pair bluetooth\") or to listen to music (Spotify, Radio stations)."
+        },
+        de: {
+          page_title: "Raumsteuerung", title: "Raumsteuerung", thermostat_title: "Temperatur", controls_title: "Steuerung",
+          light_luster: "Hauptlicht", light_ambient: "Ambiente", light_krevet: "Bettlicht", light_wc: "WC-Licht", light_ogledalo: "Spiegellicht",
+          open_door: "TÜR ÖFFNEN", raise_ramp: "SCHRANKE ÖFFNEN",
+          alexa_title: "Alexa Sprachbefehle",
+          alexa_instructions: "Liebe Gäste, dieses Zimmer ist mit einem Alexa-Sprachassistenten ausgestattet. Rufen Sie ihn mit \"ALEXA !!!\" und sagen Sie einen Befehl.\nFür Lichter verwenden Sie: Main, Ambient, Bed (oder Night), Bathroom, Mirror.\nBeispiele: \"Alexa, turn on Main\", \"Alexa, turn off Bed\".\nFür Temperatur verwenden Sie \"Thermostat\" oder \"Temperature\" (gleiche Funktion). Beispiel: \"Alexa, set Thermostat to 22\".\nSie können Alexa auch als Bluetooth-Lautsprecher nutzen (Befehl \"Alexa, pair bluetooth\") oder Musik hören (Spotify, Radiosender)."
+        }
+      };
+
+      // --- 2. GLOBALNE VARIJABLE I STANJE ---
+      let state = {
+        currentTemp: 22.0,
+      };
+      let isPollingActive = true; 
+      let isSliderDragging = false;
+      
+      const tempSlider = document.getElementById('temp-slider');
+      const tempVrijednost = document.getElementById('temp-vrijednost');
+      const currentTempDisplay = document.getElementById('current-temp-display');
+      const allSwitches = document.querySelectorAll('.switch-list-container input[role="switch"]');
+      const langButtons = document.querySelectorAll('.lang-btn[data-lang]');
+      const alexaBtn = document.getElementById('alexa-btn');
+      const alexaOverlay = document.getElementById('alexa-instructions-overlay');
+      const hasAlexa = {{ 'true' if has_alexa else 'false' }};
+      const hasRampa = {{ 'true' if has_rampa else 'false' }};
+
+      // --- 3. LOGIKA ZA PREVODE I UI ---
+      function setLanguage(lang) {
+        if (!translations[lang]) return;
+        
+        document.querySelectorAll('[data-translate-key]').forEach(el => {
+          const key = el.dataset.translateKey;
+          if (translations[lang][key]) {
+            el.textContent = translations[lang][key];
+          }
+        });
+        
+        document.documentElement.lang = (lang === 'bhs') ? 'hr' : lang;
+        localStorage.setItem('userLanguage', lang);
+
+        langButtons.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.lang === lang);
+        });
+      }
+
+      langButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          setLanguage(button.dataset.lang);
+        });
+      });
+
+      if (alexaBtn) {
+        alexaBtn.addEventListener('click', () => {
+          alexaOverlay.classList.toggle('hidden');
+        });
+      }
+      if (alexaOverlay) {
+        alexaOverlay.addEventListener('click', (e) => {
+          if (e.target === alexaOverlay) {
+            alexaOverlay.classList.add('hidden');
+          }
+        });
+      }
+
+      // --- 4. GLAVNA LOGIKA (SLANJE I PRIMANJE) ---
+
+      function posaljiKomandu(uredjaj, vrijednost, targetElement) {
+        console.log('Šaljem:', uredjaj, vrijednost);
+        
+        // 1. OPTIMISTIČNO AŽURIRANJE ZA SVJETLA
+        if (targetElement) {
+            targetElement.disabled = true;
+        }
+
+        // 2. BLOKIRAJ POLLING DUŽE VRIJEME
+        isPollingActive = false; 
+        setTimeout(() => { 
+             isPollingActive = true;
+             dohvatiStatus(true); 
+        }, 4000);
+
+        fetch('/api/control', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ uredjaj: uredjaj, vrijednost: vrijednost }),
+        })
+        .then(handleApiResponse)
+        .then(data => {
+            console.log('Server odgovara:', data.message);
+            if (targetElement) {
+                targetElement.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            dohvatiStatus(true); 
+            if (targetElement) {
+                targetElement.disabled = false;
+            }
+        });
+      }
+
+      function dohvatiStatus(force = false) {
+        if (!isPollingActive && !force) return;
+        if (isSliderDragging) return; 
+
+        fetch('/api/status')
+          .then(handleApiResponse)
+          .then(data => {
+            if (data.success) {
+              console.log('Status primljen:', data);
+              updateUI(data.status);
+            } else {
+              throw new Error(data.message);
+            }
+          })
+          .catch(err => {
+            console.error('Nije uspjelo dohvaćanje statusa:', err);
+            currentTempDisplay.textContent = '(Greška)';
+          });
+      }
+
+      function updateUI(status) {
+        if (!status) return;
+
+        // 1. Ažuriraj temperaturu (toFixed(0) jer je step=1)
+        state.currentTemp = status.currentTemp || 22.0;
+        currentTempDisplay.textContent = `${state.currentTemp.toFixed(0)}°C`; 
+        
+        // 2. Ažuriraj slider SAMO ako ga korisnik ne dira
+        if (!isSliderDragging) {
+          // toFixed(0) za prikaz, ali za value uzimamo zaokruženu vrijednost
+          const setpoint = (Math.round(status.setpoint) || 22.0).toFixed(0);
+          
+          if (tempSlider.value !== setpoint) {
+            // Ažuriramo slider VALUE sa cijelim brojem (jer je step=1)
+            tempSlider.value = Math.round(status.setpoint || 22.0); 
+          }
+          if (tempVrijednost.textContent !== setpoint) {
+            tempVrijednost.textContent = setpoint;
+          }
+        }
+        
+        // 3. Ažuriraj boju temperature (vizualno)
+        azurirajBojuTemperature(true, parseFloat(tempSlider.value)); 
+
+        // 4. Ažuriraj termostat ON/OFF prekidač — SAMO ako server eksplicitno javlja stanje.
+        // Ako GET_ROOM_TEMP nije uspio (timeout/contention), isThermostatOn neće biti u odgovoru
+        // i prekidač zadržava zadnje poznato stanje (bez flickeringa).
+        const thermostatSwitch = document.getElementById('switch-thermostat');
+        if (thermostatSwitch && !thermostatSwitch.disabled && ('isThermostatOn' in status)) {
+          const serverThermostatState = status.isThermostatOn;
+          if (thermostatSwitch.checked !== serverThermostatState) {
+            console.log(`Syncing thermostat: ${thermostatSwitch.checked} -> ${serverThermostatState}`);
+            thermostatSwitch.checked = serverThermostatState;
+          }
+        }
+
+        // 5. Ažuriraj prekidače za svjetla — SAMO za uređaje prisutne u odgovoru.
+        // Ako server nije uspio dohvatiti GET_PINS (timeout/contention), lights neće
+        // biti u odgovoru i prekidači zadržavaju zadnje poznato stanje (bez flickeringa).
+        if (status.lights) {
+          allSwitches.forEach(prekidac => {
+            if (prekidac.disabled) return; 
+
+            const deviceName = prekidac.dataset.device; 
+            // Ažuriraj SAMO ako server eksplicitno javlja stanje za ovaj uređaj
+            if (deviceName in status.lights) {
+              const serverState = status.lights[deviceName];
+              if (prekidac.checked !== serverState) {
+                console.log(`Syncing ${deviceName}: ${prekidac.checked} -> ${serverState}`);
+                prekidac.checked = serverState;
+              }
+            }
+            // Ako uređaj NIJE u odgovoru → ne diraj prekidač
+          });
+        }
+      }
+
+      function azurirajBojuTemperature(isON, setpoint) {
+        tempVrijednost.classList.remove('output-gray', 'output-blue', 'output-green', 'output-red');
+        
+        if (Math.abs(setpoint - state.currentTemp) <= 1.0) {
+          tempVrijednost.classList.add('output-green');
+        } else if (setpoint < state.currentTemp) {
+          tempVrijednost.classList.add('output-blue');
+        } else {
+          tempVrijednost.classList.add('output-red');
+        }
+      }
+      
+      function handleApiResponse(response) {
+        if (response.status === 401) {
+          alert('Sesija je istekla. Molimo, prijavite se ponovo.');
+          window.location.href = '/';
+          throw new Error('Sesija istekla');
+        }
+        if (!response.ok) {
+          throw new Error('Greška servera: ' + response.statusText);
+        }
+        return response.json();
+      }
+
+      // --- 5. EVENT LISTENER-I ---
+
+      // Termostat ON/OFF prekidač (sa optimističkom logikom)
+      const thermostatSwitch = document.getElementById('switch-thermostat');
+      if (thermostatSwitch) {
+        thermostatSwitch.addEventListener('change', (e) => {
+          const vrijednost = e.target.checked;
+          const originalState = vrijednost;
+          
+          // Disable prekidač tokom slanja
+          e.target.disabled = true;
+          
+          // Blokiraj polling
+          isPollingActive = false;
+          
+          fetch('/api/control', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ uredjaj: 'thermostat_power', vrijednost: vrijednost }),
+          })
+          .then(handleApiResponse)
+          .then(data => {
+            console.log('Termostat komanda poslana:', data.message);
+            e.target.disabled = false;
+            // Reaktiviraj polling nakon 3s
+            setTimeout(() => {
+              isPollingActive = true;
+              dohvatiStatus(true);
+            }, 3000);
+          })
+          .catch(error => {
+            console.error('Greška pri kontroli termostata:', error);
+            // Vrati na prethodno stanje ako je greška
+            e.target.checked = !originalState;
+            e.target.disabled = false;
+            // Reaktiviraj polling odmah
+            isPollingActive = true;
+            dohvatiStatus(true);
+          });
+        });
+      }
+
+      // OPEN DOOR dugme (taster, ne toggle)
+      const openDoorBtn = document.getElementById('btn-open-door');
+      if (openDoorBtn) {
+        openDoorBtn.addEventListener('click', () => {
+          openDoorBtn.disabled = true;
+          fetch('/api/control', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ uredjaj: 'open_door', vrijednost: true }),
+          })
+          .then(handleApiResponse)
+          .then(data => {
+            console.log('Vrata otvorena:', data.message);
+            openDoorBtn.disabled = false;
+          })
+          .catch(error => {
+            console.error('Greška pri otvaranju vrata:', error);
+            alert('Greška: ' + error.message);
+            openDoorBtn.disabled = false;
+          });
+        });
+      }
+
+      // PODIGNI RAMPU dugme (taster, ne toggle)
+      const raiseRampBtn = document.getElementById('btn-raise-ramp');
+      if (raiseRampBtn) {
+        raiseRampBtn.addEventListener('click', () => {
+          raiseRampBtn.disabled = true;
+          fetch('/api/control', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ uredjaj: 'rampa', vrijednost: true }),
+          })
+          .then(handleApiResponse)
+          .then(data => {
+            console.log('Rampa pokrenuta:', data.message);
+            raiseRampBtn.disabled = false;
+          })
+          .catch(error => {
+            console.error('Greška pri podizanju rampe:', error);
+            alert('Greška: ' + error.message);
+            raiseRampBtn.disabled = false;
+          });
+        });
+      }
+
+      // Svi prekidači za svjetla
+      document.querySelectorAll('.switch-list-container input[role="switch"]').forEach(prekidac => {
+        prekidac.addEventListener('change', (e) => {
+          const uredjaj = e.target.dataset.device;
+          const vrijednost = e.target.checked; 
+          
+          if (uredjaj.startsWith('light_')) {
+            posaljiKomandu(uredjaj, vrijednost, e.target); 
+          }
+        });
+      });
+
+      // Slider za temperaturu
+      tempSlider.addEventListener('input', (e) => {
+        // Prikazuje cijeli broj
+        tempVrijednost.textContent = Math.round(parseFloat(e.target.value)).toFixed(0); 
+        azurirajBojuTemperature(true, parseFloat(e.target.value));
+      });
+      
+      tempSlider.addEventListener('mousedown', () => { 
+        isSliderDragging = true;
+        isPollingActive = false;
+      });
+      tempSlider.addEventListener('touchstart', () => { 
+        isSliderDragging = true;
+        isPollingActive = false;
+      });
+      
+      tempSlider.addEventListener('mouseup', () => { isSliderDragging = false; });
+      tempSlider.addEventListener('touchend', () => { isSliderDragging = false; });
+
+      tempSlider.addEventListener('change', (e) => { 
+        isSliderDragging = false;
+        const uredjaj = e.target.dataset.device;
+        const vrijednost = parseFloat(e.target.value);
+        
+        posaljiKomandu(uredjaj, vrijednost, null); 
+      });
+
+      // --- 6. INICIJALIZACIJA STRANICE ---
+      document.addEventListener('DOMContentLoaded', () => {
+        const savedLang = localStorage.getItem('userLanguage') || 'bhs';
+        setLanguage(savedLang);
+
+        console.log('Stranica učitana, dohvaćam stvarni status sobe...');
+        currentTempDisplay.textContent = '...';
+        tempVrijednost.classList.add('output-gray');
+        dohvatiStatus(true); 
+
+        setInterval(dohvatiStatus, 5000); 
+      });
+
+    </script>
+  </body>
+</html>

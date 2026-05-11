@@ -1,13 +1,23 @@
-﻿# ==============================================================================
-# Workspace gitignore for Roomly Projects
+# ==============================================================================
+# Roomly Project Gitignore
 # ==============================================================================
 
-# Applications
-reception-app/
-server-rpi/
-server-win/
+# --- Sensitive Configuration (NEVER COMMIT THESE) ---
+.env
+.env.local
+.env.*
+server-rpi/config.json
+server-win/config.json
+*.db
+*.sqlite
+*.sqlite3
 
-# Backups and copies
+# --- Repository Snapshots (Security Risk) ---
+repomix-output.xml
+repomix-output.txt
+repomix-output.json
+
+# --- Backups and Archives ---
 archive/
 **/archive/
 *- Copy/
@@ -17,29 +27,8 @@ archive/
 config_backup_*.json
 config_bkp.json
 
-# Merged repository representations
-repomix-output.xml
-repomix-output.txt
-repomix-output.json
-
-# Sensitive configuration
-.env
-.env.local
-.env.*.local
-server-rpi/config.json
-server-win/config.json
-*.db
-*.sqlite
-*.sqlite3
-
-# Build outputs and dependencies
+# --- Dependencies and Build Outputs ---
 node_modules/
-__pycache__/
-.pytest_cache/
-.mypy_cache/
-.venv/
-venv/
-env/
 dist/
 out/
 build/
@@ -47,6 +36,12 @@ release/
 release*/
 app-builds/
 app-builds*/
+.venv/
+venv/
+env/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
 *.tsbuildinfo
 *.pyc
 *.pyo
@@ -54,11 +49,7 @@ app-builds*/
 *.exe
 *.msi
 
-# Documentation
-**/doc/
-**/android_transition_docs/
-
-# Logs and temp files
+# --- Logs and Temp Files ---
 *.log
 logs/
 .cache/
@@ -68,7 +59,11 @@ logs/
 *.swo
 *~
 
-# IDE / OS files
+# --- Documentation ---
+**/doc/
+**/android_transition_docs/
+
+# --- IDE and OS Files ---
 .vscode/
 .idea/
 .DS_Store

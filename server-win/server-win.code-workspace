@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../reception-app"
+		},
+		{
+			"path": "../../HTTPBridge"
+		},
+		{
+			"path": "../../KontrolerGrijanja"
+		}
+	],
+	"settings": {}
+}

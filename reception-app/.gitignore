@@ -1,0 +1,50 @@
+# ==============================================================================
+# TOPLIK RECEPTION APP - Git Ignore
+# ==============================================================================
+
+# Environment Configuration (KRITIČNO - NE COMMIT-OVAT!)
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build outputs
+dist/
+out/
+build/
+*.tsbuildinfo
+
+# Electron build artifacts
+release/
+app-builds/
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Database (ako se kreira lokalno)
+*.db
+*.sqlite
+*.sqlite3
