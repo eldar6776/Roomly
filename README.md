@@ -1,39 +1,38 @@
 # Roomly
 
-**Roomly** is a modular software platform for **smart reception operations** and **smart apartment / room control**.
+**Roomly** is a smart hospitality control platform centered around a reception desktop application and a Raspberry Pi backend that drive room access, room control, guest-facing interfaces, and operational management.
 
-This repository is not a single standalone app. It contains multiple connected components that together support reception workflows, backend services, device communication, and on-site automation.
+This repository contains the actual working software layers used for:
 
-At this stage, this repository includes:
+- reception workstation operations on Windows 11
+- local backend development on Windows
+- production backend runtime on Raspberry Pi 3B
+- room control pages for guests
+- manager and admin web interfaces
+- printer-based guest slip generation
+- card reader / card writer integration
+- communication with external smart-device infrastructure
 
-- a **Windows 11 desktop reception application**
-- a **Python backend for Raspberry Pi 3B**
-- a **Windows localhost development copy of the backend**
-
-It is also directly connected to the **HTTPBridge ESP32** project and is part of a larger ecosystem that includes:
-
-- **4 production STM32 projects**
-- an **Android application**
-- additional on-site devices, controllers, and smart room automation components
-
-This README is written as a **promotion and architecture overview** of the project.
+The code in this repository shows a real multi-part system rather than a demo project.
 
 ---
 
-## Overview
+## What Roomly does
 
-Roomly is designed as a practical operational platform for hospitality-oriented environments where reception workflows, embedded hardware, and room automation need to work together as one system.
+From the code currently in this repository, Roomly provides a practical software stack for a hospitality environment branded in the project as **Toplik Smart Hotel / Toplik Reception / Toplik Village Resort**.
 
-The project combines desktop software, backend services, microcontroller-based device layers, and mobile control into a single smart environment.
+The project combines:
 
-### Main goals
+- a **desktop reception application** built with Electron, React, and TypeScript
+- a **Python backend** built with Flask and Waitress
+- a **guest room control interface** with multilingual UI
+- a **manager heating control panel**
+- an **admin dashboard and admin login flow**
+- **thermal printer slip generation** with QR code output
+- **MIFARE/card-reader related setup and Windows integration**
+- configuration for **Raspberry Pi-hosted smart room access**
 
-- support reception and front-desk operations
-- provide a backend layer for operational logic
-- integrate local devices such as printers and card readers
-- connect to Raspberry Pi infrastructure for deployment
-- communicate with ESP32- and STM32-based hardware modules
-- serve as part of a broader smart reception and smart room ecosystem
+The repository structure and code clearly indicate that the system is designed for real on-site use, not just local UI prototyping.
 
 ---
 
@@ -41,23 +40,23 @@ The project combines desktop software, backend services, microcontroller-based d
 
 ```text
 Roomly/
-├── reception-app/   # Windows 11 desktop application
-├── server-rpi/      # Raspberry Pi production backend
-├── server-win/      # Windows localhost backend for development
+├── reception-app/   # Windows 11 desktop reception application
+├── server-rpi/      # Production backend for Raspberry Pi 3B
+├── server-win/      # Windows localhost backend used for development/testing
 └── README.md
 ```
 
 ---
 
-## Components
+## Component breakdown
 
-### 1. `reception-app`
+### `reception-app`
 
-`reception-app` is the Windows desktop application used by the reception operator.
+This is the reception workstation application.
 
-It is built with modern desktop web technologies and packaged as a native desktop app.
+It is an Electron desktop app with a React + TypeScript frontend and local Windows-oriented integrations.
 
-### Technology stack
+### Confirmed stack from the project files
 
 - Electron
 - React
@@ -65,43 +64,59 @@ It is built with modern desktop web technologies and packaged as a native deskto
 - Webpack
 - Tailwind CSS
 - SQLite via `better-sqlite3`
-- Python helper scripts for selected local integrations
+- `electron-store`
+- Python helper scripts
 
-### Purpose
+### What the reception app is used for
 
-This application is intended to provide the main operator-facing interface for:
+Based on the code and configuration, the desktop app is intended for:
 
-- front-desk workflows
-- reservation or guest-related processes
-- local operational control
-- communication with backend services
-- integration with devices such as printers and card readers
+- PIN-based reception and manager login
+- hotel configuration and local settings
+- communication with the Raspberry Pi backend
+- local printer integration
+- local card-reader / card-writer support
+- Windows-based front desk operation
 
-### Important files
+### Evidence from the code
 
-- `reception-app/package.json`
-- `reception-app/electron_main.js`
-- `reception-app/src/`
-- `reception-app/printer.py`
+- `reception-app/package.json` identifies the app as **Toplik Smart Hotel - Reception Desktop Application**
+- `reception-app/src/renderer/pages/Login.tsx` shows PIN-based login for **reception** and **manager** roles
+- `reception-app/src/main/config.ts` defines hotel name, WiFi SSID, printer name, ntfy alerts, and Raspberry Pi connection settings
+- `reception-app/printer.py` prints multilingual thermal slips containing room, PIN, WiFi info, and a QR URL pointing to the Raspberry Pi backend
+- `reception-app/cardrw/setup_reader.bat` installs Python dependencies for card reader setup
+- `reception-app/SETUP_NEW_PC.ps1` prepares a full Windows machine for operation
+
+### Reception app structure
+
+```text
+reception-app/
+├── src/main/        # Electron/main-process logic and config
+├── src/renderer/    # React frontend
+├── src/shared/      # shared code
+├── cardrw/          # card reader / writer support
+├── printer.py       # thermal printer integration
+└── SETUP_NEW_PC.ps1 # full new-PC setup
+```
+
+### Reception workstation setup
+
+The repository already includes an installation script for a new PC:
+
 - `reception-app/SETUP_NEW_PC.ps1`
-- `reception-app/cardrw/`
 
-### Desktop application setup
-
-A setup script is already included for preparing a new Windows machine:
-
-- `reception-app/SETUP_NEW_PC.ps1`
-
-Based on the project files, this script installs and prepares:
+From the script content, it prepares:
 
 - Node.js
-- Python
+- Python 3
 - Visual Studio Build Tools
 - npm dependencies
-- Python dependencies for card reader integration
-- local environment preparation
+- Electron native rebuild
+- card reader Python dependencies
+- `.env` bootstrap
+- a desktop shortcut for the application
 
-### Development
+### Development commands
 
 ```bash
 cd reception-app
@@ -109,7 +124,7 @@ npm install
 npm run dev
 ```
 
-### Build
+### Packaging
 
 ```bash
 cd reception-app
@@ -119,13 +134,13 @@ npm run package:win
 
 ---
 
-### 2. `server-rpi`
+### `server-rpi`
 
-`server-rpi` is the production backend designed to run on a **Raspberry Pi 3B**.
+This is the Raspberry Pi production backend.
 
-This folder represents the remote or deployed runtime version of the backend service.
+It contains the deployed Python server, templates, static assets, authentication pages, control endpoints, and room-facing pages.
 
-### Technology stack
+### Confirmed stack from the project files
 
 - Python
 - Flask
@@ -133,264 +148,332 @@ This folder represents the remote or deployed runtime version of the backend ser
 - Requests
 - PyJWT
 
-### Purpose
+### What the Raspberry Pi backend does
 
-This service is intended to:
+Based strictly on the files present in this repository, `server-rpi` is responsible for:
 
-- host backend business logic
-- serve templates and static resources
-- provide APIs and operational endpoints
-- run in the on-site Raspberry Pi environment
-- coordinate logic used by the wider Roomly platform
+- serving guest room control pages
+- serving admin and manager login pages
+- providing backend APIs for room control
+- handling manager heating control
+- communicating with device-control layers
+- producing current device and thermostat state for the frontend
+- running on Raspberry Pi as the production host
 
-### Important files
+### Templates currently present
 
-- `server-rpi/server.py`
-- `server-rpi/log_transfer_manager.py`
-- `server-rpi/templates/`
-- `server-rpi/static/`
-- `server-rpi/requirements.txt`
+```text
+server-rpi/templates/
+├── admin.html
+├── admin_login.html
+├── login.html
+├── manager.html
+├── manager_heating.html
+├── manager_login.html
+└── soba.html
+```
 
-### Installation
+These are not placeholders. They show that the backend already includes multiple real operational UIs:
+
+- **`soba.html`** — guest-facing room control page
+- **`manager_heating.html`** — manager-facing heating/pump control page
+- **`admin_login.html`** — admin authentication
+- **`manager_login.html`** — manager authentication
+- **`admin.html` / `manager.html`** — dashboard-level pages
+
+### Guest room control features visible in `soba.html`
+
+The room control page already includes:
+
+- thermostat setpoint control
+- thermostat ON/OFF switch
+- control of multiple lighting zones:
+  - main light
+  - ambient light
+  - bed light
+  - WC light
+  - mirror light
+- open door action
+- multilingual switching:
+  - BHS
+  - English
+  - German
+- Alexa instructions overlay for voice-command guidance
+- polling of real status from backend APIs
+
+This means the backend is not just exposing data — it is already serving a complete guest control experience.
+
+### Manager heating features visible in `manager_heating.html`
+
+The manager heating page includes control and status for:
+
+- thermostat temperature setpoint
+- thermostat ON/OFF
+- fancoil pump mode
+- fancoil pump manual ON/OFF
+- floor-heating pump mode
+- floor-heating pump manual ON/OFF
+- real RUN/STOP pump status indicators
+
+The backend code in `server-rpi/server.py` also confirms HVAC / thermostat / pump status handling and command synchronization.
+
+### Raspberry Pi backend commands
 
 ```bash
 cd server-rpi
 pip install -r requirements.txt
-```
-
-### Run
-
-```bash
-cd server-rpi
 python server.py
 ```
 
-> In production, this service can also be managed through `waitress`, `systemd`, or another deployment/runtime supervisor.
-
 ---
 
-### 3. `server-win`
+### `server-win`
 
-`server-win` is the Windows development copy of the backend.
+This folder is the Windows localhost development copy of the backend.
 
-It is used for local development, localhost testing, debugging, and preparing backend changes before those changes are copied or deployed to the Raspberry Pi environment.
+It mirrors the server-side application structure used on Raspberry Pi, but exists specifically to make development, localhost testing, and debugging easier on a Windows machine.
 
-### Purpose
+### Why this folder exists
 
-This folder exists to make backend development faster and more practical on a Windows workstation.
+The repository makes this workflow clear:
 
-Typical use cases:
+- backend changes are easier to build and debug on Windows
+- the same functional backend is then prepared for the Raspberry Pi runtime
+- templates and operational pages can be tested locally before deployment
 
-- local backend development
-- localhost testing
-- debugging before deployment
-- validating backend behavior before copying to the production Raspberry Pi environment
+### Confirmed from the files
 
-### Important files
+`server-win` contains:
 
-- `server-win/server.py`
-- `server-win/instaliraj_biblioteke.bat`
-- `server-win/pokreni_server.bat`
-- `server-win/templates/`
-- `server-win/static/`
+- `server.py`
+- `templates/`
+- `static/`
+- `instaliraj_biblioteke.bat`
+- `pokreni_server.bat`
 
-### Install dependencies
+The templates present in `server-win/templates` match the operational pages found in `server-rpi/templates`, which confirms that the Windows backend is a real development environment for the same application logic.
+
+### Local install and run
 
 ```bat
 cd server-win
 instaliraj_biblioteke.bat
+pokreni_server.bat
 ```
 
-or manually:
+Or manually:
 
 ```bash
 cd server-win
 pip install -r requirements.txt
-```
-
-### Run locally
-
-```bat
-cd server-win
-pokreni_server.bat
-```
-
-or manually:
-
-```bash
-cd server-win
 python server.py
 ```
 
 ---
 
-## Development and deployment workflow
+## Confirmed functional areas from the codebase
 
-One of the most important things to understand about this repository is the difference between `server-win` and `server-rpi`.
+This README is intentionally based on the actual repository contents. The following capabilities are visible directly in the files.
 
-They represent two environments with different roles.
+### 1. Reception login and role separation
 
-### Local development flow
+The Electron app login flow supports role-based PIN access for at least:
 
-`server-win` is used for:
+- reception
+- manager
 
-- writing new backend logic
-- testing locally on `localhost`
-- debugging behavior in a convenient desktop environment
-- validating changes before deployment
+The renderer login page checks locally stored role PINs and routes the user accordingly.
 
-### Production flow
+### 2. Hotel and infrastructure configuration
 
-`server-rpi` is used for:
+The Electron configuration file includes runtime settings for:
 
-- deployed backend execution
-- on-device Raspberry Pi runtime
-- production or near-production operational use
+- hotel name
+- WiFi SSID
+- QR URL generation
+- Raspberry Pi host and port
+- printer configuration
+- SOS notification topic via `ntfy.sh`
+- default temperatures
+- checkout time
+- application dimensions and identity
 
-### Typical workflow
+### 3. Guest thermal slip printing
+
+`reception-app/printer.py` generates a real guest slip containing:
+
+- hotel name
+- room number
+- guest PIN
+- WiFi network name
+- QR code for smart room control
+- checkout time
+- multilingual output:
+  - Serbian/BHS
+  - English
+  - German
+
+The script uses **Windows spooler printing** with ESC/POS commands, which shows this is intended for an actual thermal-printer workflow at reception.
+
+### 4. Guest room control UI
+
+The guest page in `server-rpi/templates/soba.html` provides direct control over:
+
+- room temperature
+- thermostat power
+- multiple lighting circuits
+- door opening
+- guest language switching
+- Alexa usage instructions
+
+### 5. Manager heating control
+
+The manager heating page and backend logic expose:
+
+- thermostat state and setpoint
+- HVAC pump mode switching
+- manual/automatic control behavior
+- live RUN/STOP feedback
+
+### 6. Admin and manager authentication
+
+Separate login pages exist for:
+
+- admin access
+- manager access
+
+This indicates the system already has distinct operational roles on the web/backend side in addition to the desktop app roles.
+
+---
+
+## Architecture
+
+The repository shows three practical software layers:
+
+1. **Reception workstation layer** on Windows 11
+2. **Backend service layer** for local testing and Raspberry Pi production runtime
+3. **Guest / manager / admin web interfaces** served by the backend
+
+### Core structure
 
 ```text
-Feature development
-    -> local implementation in server-win
-    -> localhost testing and debugging
-    -> validation
++-----------------------------+
+| Reception Workstation       |
+| Electron + React desktop UI |
++-------------+---------------+
+              |
+              | local integrations
+              v
++-----------------------------+
+| Windows device integrations |
+| printer.py / cardrw         |
++-------------+---------------+
+              |
+              | backend communication
+              v
++-----------------------------+
+| Roomly backend              |
+| server-win or server-rpi    |
++-------------+---------------+
+              |
+              +------------------------------+
+              |                              |
+              v                              v
++-----------------------------+   +-----------------------------+
+| Guest room web UI           |   | Manager / Admin web UI      |
+| soba.html                   |   | manager/admin pages         |
++-----------------------------+   +-----------------------------+
+```
+
+### Operational environment view
+
+```text
++----------------------+        +----------------------+        +----------------------+
+| Reception PC         | -----> | Roomly Backend       | -----> | Device / control     |
+| Windows 11 app       |        | Flask on Win / RPi   |        | infrastructure       |
++----------+-----------+        +----------+-----------+        +----------------------+
+           |                               |
+           |                               |
+           v                               v
++----------------------+        +----------------------+
+| Thermal printer      |        | Guest / Manager /    |
+| Card reader/writer   |        | Admin web interfaces |
++----------------------+        +----------------------+
+```
+
+### Guest access flow visible in the code
+
+The printed slip generated by `printer.py` contains:
+
+- room number
+- guest PIN
+- WiFi details
+- a QR URL derived from Raspberry Pi host and port
+
+That establishes a concrete operational flow:
+
+```text
+Reception creates / prints guest slip
+        -> guest receives room number + PIN
+        -> guest scans QR code
+        -> guest opens room control page served by Raspberry Pi backend
+        -> guest controls room temperature, lights, and door-related actions
+```
+
+This is one of the most important real-world flows visible in the repository.
+
+---
+
+## Development workflow
+
+The codebase itself makes the intended workflow clear.
+
+### Backend workflow
+
+```text
+Develop locally in server-win
+    -> test on localhost
+    -> validate templates, APIs, and control logic
     -> copy / deploy to server-rpi
-    -> production runtime on Raspberry Pi 3B
+    -> run in production on Raspberry Pi 3B
 ```
 
-### Application flow
+### Desktop workflow
 
 ```text
-Reception operator
-    -> uses reception-app on Windows 11
-    -> communicates with backend services
-    -> backend runs locally during development or on Raspberry Pi in production
-    -> system exchanges data with hardware bridge and embedded controllers
+Prepare Windows workstation
+    -> run SETUP_NEW_PC.ps1
+    -> install Node.js / Python / Build Tools
+    -> install card reader dependencies
+    -> build/package reception desktop app
+    -> run on reception PC
 ```
 
----
-
-## System architecture
-
-Roomly is part of a larger technical ecosystem.
-
-The repository itself contains only part of the complete platform, but it already shows the core software layers used in the smart reception and smart room environment.
-
-### High-level architecture
+### Hospitality control workflow
 
 ```text
-+------------------------+
-|   Reception Operator   |
-+-----------+------------+
-            |
-            v
-+------------------------+
-|  Roomly Reception App  |
-|  Windows 11 / Electron |
-+-----------+------------+
-            |
-            v
-+------------------------+
-|    Roomly Backend      |
-| server-win / server-rpi|
-+-----+-------------+----+
-      |             |
-      |             v
-      |      +------------------+
-      |      | Raspberry Pi 3B  |
-      |      | Production Host  |
-      |      +------------------+
-      |
-      v
-+------------------------+
-| Local integrations     |
-| printer / card reader  |
-+------------------------+
+Reception operator uses desktop app
+    -> system prepares guest access data
+    -> thermal printer prints access slip with QR code
+    -> guest opens room-control page
+    -> backend serves live room control and operational interfaces
 ```
-
-### Extended ecosystem view
-
-```text
-                               +----------------------+
-                               |   Android App        |
-                               +----------+-----------+
-                                          |
-                                          v
-+----------------------+      +----------------------+      +----------------------+
-| Reception PC         | ---> | Roomly Backend       | ---> | HTTPBridge ESP32     |
-| Windows 11 App       |      | Win dev / RPi prod   |      | Communication layer  |
-+----------+-----------+      +----------+-----------+      +----------+-----------+
-           |                             |                             |
-           |                             v                             v
-           |                  +----------------------+      +----------------------+
-           |                  | Raspberry Pi 3B      |      | ESP32 devices        |
-           |                  | Production runtime   |      | and field hardware   |
-           |                  +----------------------+      +----------------------+
-           |
-           v
-+----------------------+
-| Local peripherals    |
-| Printer / Card reader|
-+----------------------+
-
-
-                      +----------------------------------------------+
-                      |     Additional embedded system layer         |
-                      |        4 separate production STM32 projects  |
-                      +----------------------------------------------+
-```
-
----
-
-## Ecosystem positioning
-
-Roomly should be viewed as one software layer within a broader integrated platform.
-
-### The broader ecosystem includes
-
-- **Roomly** desktop and backend software
-- **HTTPBridge ESP32** for device-facing HTTP communication
-- **4 fully operational STM32 projects**
-- **Android mobile application**
-- **Raspberry Pi deployment environment**
-- **local operator hardware and peripherals**
-
-Together, these components form a complete operational solution for:
-
-- smart reception
-- smart room / apartment control
-- hardware-assisted workflows
-- on-site automation
-- hybrid desktop + embedded + mobile coordination
-
----
-
-## Related projects
-
-This repository is part of a larger multi-project platform.
-
-At the moment, the following related components are known:
-
-- HTTPBridge ESP32 project
-- 4 STM32 embedded projects
-- Android mobile application
-
-> Links to related repositories will be added later.
 
 ---
 
 ## Technology summary
 
-### Desktop
+### Desktop layer
 
 - Electron
 - React
 - TypeScript
-- Tailwind CSS
 - Webpack
-- SQLite
+- Tailwind CSS
+- better-sqlite3
+- electron-store
 
-### Backend
+### Backend layer
 
 - Python
 - Flask
@@ -398,67 +481,57 @@ At the moment, the following related components are known:
 - Requests
 - PyJWT
 
-### Infrastructure and device ecosystem
+### Windows-specific integrations
 
-- Windows 11
-- Raspberry Pi 3B
-- ESP32-based integration
-- STM32-based integration
-- Android mobile client
+- Python-based ESC/POS thermal printing through `win32print`
+- card reader / card writer setup with Python dependencies
+- batch and PowerShell automation scripts
 
 ---
 
-## Why this repository structure exists
+## Why the repository is structured this way
 
-This repository may look unusual at first because it contains both a Raspberry Pi backend and a Windows backend copy.
+This repository has a very practical layout because it reflects how the software is actually operated.
 
-That structure exists for practical reasons:
+- `reception-app` is the operator-facing application used on a Windows reception PC
+- `server-win` is the development and localhost testing backend
+- `server-rpi` is the production backend intended for Raspberry Pi deployment
 
-- backend development is easier and faster on a Windows workstation
-- local testing on `localhost` speeds up iteration
-- the Raspberry Pi folder represents the deployment target
-- the desktop application is a separate operational layer used by the reception operator
+This separation is not generic architecture styling — it matches the real workflow already visible in the code:
 
-This makes the repository suitable both for development and for real operational deployment.
-
----
-
-## Promotional summary
-
-Roomly is more than a desktop app or a backend service.
-
-It is part of a broader smart hospitality platform that combines:
-
-- operator-facing software
-- backend logic
-- Raspberry Pi deployment
-- ESP32 communication layers
-- STM32 embedded modules
-- Android mobile access
-- physical device integration
-
-The result is a modular, real-world system for building a connected **smart reception** and **smart room control** environment.
+- Windows workstation setup scripts
+- production Raspberry Pi configuration
+- locally testable backend templates
+- printer and card-related local integrations
+- guest room control served from the backend
 
 ---
 
-## Current documentation scope
+## Project identity visible in the code
 
-This README currently provides:
+Names and branding currently visible in the repository include:
 
-- an English-only project overview
-- repository structure explanation
-- component descriptions
-- development and deployment flow
-- architecture diagrams
-- ecosystem context for promotion
+- **Roomly**
+- **Toplik Smart Hotel**
+- **Toplik Smart Reception**
+- **Toplik Village Resort**
+- **Toplik Reception**
 
-Future improvements may include:
+That branding appears in the desktop app metadata, UI text, configuration defaults, and printer output.
 
-- links to all related repositories
-- screenshots of the desktop application
-- API overview
-- deployment guide
-- environment configuration details
-- hardware topology map
-- communication protocol overview
-- detailed documentation for Android and STM32 integration
+---
+
+## Summary
+
+Roomly is a real hospitality-control software stack that already combines:
+
+- a Windows reception desktop application
+- Raspberry Pi backend deployment
+- guest room control pages
+- manager heating control
+- admin and manager authentication
+- thermal printer guest-slip generation
+- card reader / card-writer support
+- multilingual guest-facing interaction
+
+This repository does not just describe the platform — it already contains the active software layers that make the reception and room-control workflow possible.
