@@ -13,7 +13,7 @@
 ![Version](https://img.shields.io/badge/version-1.0.0-orange?style=for-the-badge)
 ![Status](https://img.shields.io/badge/status-Active%20Development-16A34A?style=for-the-badge)
 
-**Roomly** is a smart hospitality control platform built around a **central Raspberry Pi 3B Python server** that coordinates reception operations, guest room access, smart room control, voice control, and management interfaces across the property.
+**Roomly** is a smart hospitality control platform built around a **central Raspberry Pi 3B Python server** that coordinates reception operations, guest room access, smart room control, voice control, management interfaces, and room-device routing across the property.
 
 The central server connects and orchestrates:
 
@@ -23,6 +23,7 @@ The central server connects and orchestrates:
 - **Alexa + HA Bridge** voice control inside every room
 - **8 HTTPBridge room-control devices**
 - **3 STM32F746 Smart Room displays per room** connected through the HTTPBridge layer
+- a **MIFARE card reader writer** with STM32F103 + USB HID integration
 - **1 heating controller**
 - **1 thermostat for the fitness room**
 - the guest **smart room web application** hosted from the central server
@@ -60,7 +61,8 @@ The project combines:
 - a **manager heating control panel**
 - an **admin dashboard and admin login flow**
 - **thermal printer slip generation** with QR code output
-- **MIFARE/card-reader related setup and Windows integration**
+- a **MIFARE card reader writer** workflow integrated into reception operations
+- **MIFARE card reader writer** hardware based on **STM32F103 + USB HID**
 - **per-room Raspberry Pi 3A+ nodes** for in-room automation
 - **HA Bridge and Alexa voice control** for each room
 - a **central Raspberry Pi 3B server** coordinating room-facing and operational services
@@ -68,7 +70,36 @@ The project combines:
 - **STM32F746 Smart Room displays** attached to the room-control layer
 - a **mobile reservation workflow** for after-hours guest check-in
 
-The result is a hybrid property-control platform where desktop software, backend logic, web interfaces, room devices, and voice control work together under one central server.
+The result is a hybrid property-control platform where desktop software, backend logic, web interfaces, room devices, voice control, and custom hardware work together under one central server.
+
+---
+
+## Hardware and Software Ecosystem
+
+Roomly should not be viewed as a standalone app. It is the central software layer of a wider operational ecosystem built from connected software and hardware components.
+
+This ecosystem includes:
+
+- the **Roomly Electron reception application**
+- the **central Raspberry Pi 3B Python backend**
+- the **guest smart room web application**
+- **per-room Raspberry Pi 3A+ nodes**
+- **Alexa + HA Bridge** integration in every room
+- **HTTPBridge** room-control routing devices
+- **3 STM32F746 Smart Room displays per room**
+- a **MIFARE card reader writer** device based on **STM32F103 + USB HID**
+- heating and thermostat control infrastructure
+- an **Android reservation workflow** for out-of-hours operation
+
+This is important because the project is meant to present a **fully operational field-deployed hardware/software ecosystem**, not a demo stack.
+
+As the related repositories are finalized, this README can evolve into a connected entry point where items such as:
+
+- **MIFARE card reader writer**
+- **HTTPBridge**
+- **STM32F746 Smart Room displays**
+
+will appear as linked ecosystem components that open their dedicated repositories.
 
 ---
 
@@ -83,6 +114,7 @@ It is the single coordination point to which all major software and automation l
 ### The central Raspberry Pi 3B server connects to
 
 - the **Electron Windows 11 reception application**
+- the **MIFARE card reader writer** workflow and hardware integration
 - the **per-room Raspberry Pi 3A+ Alexa / HA Bridge nodes**
 - the **smart room guest web application**
 - the **8 room-control paths through HTTPBridge**
@@ -511,7 +543,11 @@ Beyond the web UI itself, the system architecture includes a Raspberry Pi 3A+ in
 
 Each room is part of an HTTPBridge-based room-device chain, and each room path also includes Smart Room display hardware based on STM32F746 devices.
 
-### 9. After-hours guest entry workflow
+### 9. MIFARE card reader writer integration
+
+The ecosystem also includes a **MIFARE card reader writer** device based on **STM32F103 + USB HID**. This hardware belongs to the wider Roomly environment and complements room issuance, physical access workflows, and reception-side hardware integration.
+
+### 10. After-hours guest entry workflow
 
 The system supports a scenario where a guest can receive a room PIN remotely, use the room outside working hours, and collect the card later at reception.
 
@@ -519,12 +555,13 @@ The system supports a scenario where a guest can receive a room PIN remotely, us
 
 ## Architecture
 
-The repository and the described deployment show four main layers:
+The repository and the described deployment show five main layers:
 
 1. **Reception workstation layer** on Windows 11
 2. **Central backend layer** on Raspberry Pi 3B
 3. **Per-room voice and automation nodes** on Raspberry Pi 3A+
 4. **Room-device and display infrastructure** routed through HTTPBridge
+5. **MIFARE access-hardware integration** for card workflows
 
 ### System-wide architecture
 
@@ -573,6 +610,18 @@ The repository and the described deployment show four main layers:
 | -> HA Bridge                |
 | -> central RPi 3B           |
 +-----------------------------+
+
++-----------------------------+
+| MIFARE card reader writer   |
+| STM32F103 + USB HID         |
+| reception-side hardware     |
++-------------+---------------+
+              |
+              v
++-----------------------------+
+| Windows 11 Reception App    |
+| and central Roomly workflow |
++-----------------------------+
 ```
 
 ### Operational environment view
@@ -587,20 +636,20 @@ The repository and the described deployment show four main layers:
            v                               v                    +----------------------+
 +----------------------+        +----------------------+        | AWS Alexa intents    |
 | Thermal printer      |        | Guest / Manager /    |        +----------------------+
-| Card reader/writer   |        | Admin web interfaces |
-+----------------------+        +----------+-----------+
-                                            |
-                                            v
-                                 +----------------------+
-                                 | HTTPBridge layer     |
-                                 | 8 room paths         |
-                                 +----------+-----------+
-                                            |
-                                            v
-                                 +----------------------+
-                                 | 3 x STM32F746 per    |
-                                 | room + room devices  |
-                                 +----------------------+
+| MIFARE card reader   |        | Admin web interfaces |
+| Card writer          |        +----------+-----------+
++----------------------+                   |
+                                           v
+                                +----------------------+
+                                | HTTPBridge layer     |
+                                | 8 room paths         |
+                                +----------+-----------+
+                                           |
+                                           v
+                                +----------------------+
+                                | 3 x STM32F746 per    |
+                                | room + room devices  |
+                                +----------------------+
 ```
 
 ### Fitness control branch
@@ -642,6 +691,7 @@ The Raspberry Pi 3B is the system coordinator that ensures:
 - smart room sessions are tied to the correct room PIN
 - duplicate active PINs are prevented
 - the same room can be controlled from the web app, reception workflows, and Alexa voice paths
+- card workflows can be coordinated with reception operations
 - the entire property behaves as one coordinated system instead of disconnected subsystems
 
 ---
@@ -677,6 +727,7 @@ Prepare Windows workstation
 Reception operator uses desktop app
     -> system prepares guest access data
     -> thermal printer prints access slip with QR code
+    -> MIFARE card reader writer supports card workflows
     -> guest opens room-control page
     -> central backend serves live room control and operational interfaces
     -> room Raspberry Pi 3A+ node provides HA Bridge and Alexa voice control inside the room
@@ -719,6 +770,7 @@ Reception operator uses desktop app
 - Alexa voice control
 - HTTPBridge routing layer
 - 3 STM32F746 Smart Room displays per room
+- MIFARE card reader writer with STM32F103 + USB HID
 - fitness heating controller
 - fitness thermostat
 - Android-assisted after-hours reservation workflow
@@ -742,6 +794,7 @@ This separation is not generic architecture styling — it matches the real work
 - guest room control served from the backend
 - room-level Alexa control provided by Raspberry Pi 3A+ nodes with HA Bridge
 - centralized routing and control through the Raspberry Pi 3B Python server
+- MIFARE card reader writer integration for physical access workflows
 
 ---
 
@@ -771,10 +824,11 @@ Roomly is a real hospitality-control software stack that already combines:
 - manager heating control
 - admin and manager authentication
 - thermal printer guest-slip generation
+- MIFARE card reader writer integration
 - card reader / card-writer support
 - multilingual guest-facing interaction
 - HTTPBridge-based device routing
 - 3 STM32F746 Smart Room displays per room
 - after-hours mobile-assisted reservation capability
 
-This repository does not just describe the platform — it already contains the active software layers that make the reception, room-control, room-access, hardware-integration, and voice-control workflow possible.
+This repository does not just describe the platform — it already contains the active software layers that make the reception, room-control, room-access, hardware-integration, card-management, and voice-control workflow possible.
