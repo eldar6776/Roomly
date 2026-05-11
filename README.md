@@ -51,7 +51,7 @@ The code in this repository reflects a real multi-part hospitality-control syste
 
 ## What Roomly does
 
-From the code currently in this repository and from the described production architecture, Roomly provides a practical software stack for a hospitality environment branded in the project as **Toplik Smart Hotel / Toplik Reception / Toplik Village Resort**.
+From the code currently in this repository and from the described production architecture, Roomly provides a practical software stack for a hospitality environment branded in the project as **My Smart Hotel / My Reception / My Village Resort**.
 
 The project combines:
 
