@@ -1,5 +1,15 @@
 # Roomly
 
+![Platform](https://img.shields.io/badge/platform-Windows%2011-0078D6?style=for-the-badge&logo=windows&logoColor=white)
+![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%203B-C51A4A?style=for-the-badge&logo=raspberrypi&logoColor=white)
+![Desktop](https://img.shields.io/badge/app-Electron%20Desktop-47848F?style=for-the-badge&logo=electron&logoColor=white)
+![Frontend](https://img.shields.io/badge/frontend-React%20%2B%20TypeScript-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Backend](https://img.shields.io/badge/backend-Python%20%2B%20Flask-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![System](https://img.shields.io/badge/system-Smart%20Reception-111827?style=for-the-badge)
+![System](https://img.shields.io/badge/system-Smart%20Room%20Control-0F766E?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.0.0-orange?style=for-the-badge)
+![Status](https://img.shields.io/badge/status-Active%20Development-16A34A?style=for-the-badge)
+
 **Roomly** is a smart hospitality control platform centered around a reception desktop application and a Raspberry Pi backend that drive room access, room control, guest-facing interfaces, and operational management.
 
 This repository contains the actual working software layers used for:
