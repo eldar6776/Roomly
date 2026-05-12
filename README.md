@@ -767,20 +767,6 @@ This separation is not generic architecture styling — it matches the real work
 
 ---
 
-## Project identity visible in the code
-
-Names and branding currently visible in the repository include:
-
-- **Roomly**
-- **My Smart Hotel**
-- **My Smart Reception**
-- **My Village Resort**
-- **My Reception**
-
-That branding appears in the desktop app metadata, UI text, configuration defaults, and printer output.
-
----
-
 ## Summary
 
 Roomly is a real hospitality-control software stack that already combines:
