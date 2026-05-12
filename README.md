@@ -54,7 +54,7 @@ This repository reflects a fully operational on-site system rather than a standa
 
 ## Overview
 
-Roomly provides a practical software and hardware stack for a hospitality environment branded in the project as **My Smart Hotel / Toplik Smart Hotel / Toplik Reception / Toplik Village Resort**.
+Roomly provides a practical software and hardware stack for a hospitality environment branded in the project as **My Smart Hotel / My Smart Hotel / My Reception / My Village Resort**.
 
 The platform combines a **desktop reception application** built with Electron, React, and TypeScript, a **central Python backend** built with Flask and Waitress, a **guest smart room web application** hosted by the central server, **per-room Raspberry Pi 3A+ nodes** for in-room automation, **HA Bridge and Alexa voice control** in every room, **HTTPBridge-based room-device routing**, **STM32F746 Smart Room displays** in the room-control layer, a **MIFARE card reader writer** device based on **STM32F103 + USB HID**, a **manager heating control panel** with a fitness thermostat/heating branch, and a **mobile reservation workflow** for after-hours guest access.
 
@@ -239,7 +239,7 @@ Based on the code and configuration, the desktop app is intended for:
 
 ### Evidence from the code
 
-- `reception-app/package.json` identifies the app as **Toplik Smart Hotel - Reception Desktop Application**
+- `reception-app/package.json` identifies the app as **My Smart Hotel - Reception Desktop Application**
 - `reception-app/src/renderer/pages/Login.tsx` shows PIN-based login for **reception** and **manager** roles
 - `reception-app/src/main/config.ts` defines hotel name, WiFi SSID, printer name, ntfy alerts, and Raspberry Pi connection settings
 - `reception-app/printer.py` prints multilingual thermal slips containing room, PIN, WiFi info, and a QR URL pointing to the Raspberry Pi backend
@@ -772,10 +772,10 @@ This separation is not generic architecture styling — it matches the real work
 Names and branding currently visible in the repository include:
 
 - **Roomly**
-- **Toplik Smart Hotel**
-- **Toplik Smart Reception**
-- **Toplik Village Resort**
-- **Toplik Reception**
+- **My Smart Hotel**
+- **My Smart Reception**
+- **My Village Resort**
+- **My Reception**
 
 That branding appears in the desktop app metadata, UI text, configuration defaults, and printer output.
 
